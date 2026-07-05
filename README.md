@@ -13,7 +13,7 @@ A multi-tenant attendance system built on **Cloudflare Workers** (serverless, ru
 - Export to CSV, Excel (.xlsx), and PDF (print-to-PDF)
 - Every company's employees, attendance, and settings are isolated from every other company (multi-tenant)
 
-## One-time setup
+## One-time setup 
 
 You'll need a free Cloudflare account and Node.js installed. 
 
