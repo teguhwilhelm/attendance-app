@@ -17,10 +17,12 @@
 
 body { background: var(--app-bg); color: var(--ink); }
 .bg-app { background: var(--app-bg); }
+.bg-ink { background: var(--ink); }
 .text-ink { color: var(--ink); }
 .text-muted { color: var(--muted); }
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }
+.bg-warning { background: var(--warning); }
 .text-danger { color: var(--danger); }
 .border-line { border-color: var(--line); }
 .divide-line > * + * { border-color: var(--line); }
@@ -107,3 +109,26 @@ body { background: var(--app-bg); color: var(--ink); }
 .view.hidden, .hidden { display: none !important; }
 .admin-only { display: none; }
 body.is-admin .admin-only { display: block; }
+
+/* ---- Mobile responsive sidebar (drawer) ---- */
+.hamburger-btn { display: none; }
+.sidebar-overlay { display: none; }
+
+@media (max-width: 860px) {
+  #app-shell { position: relative; }
+  aside.app-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
+    width: 240px; transform: translateX(-100%);
+    transition: transform .2s ease;
+  }
+  aside.app-sidebar.open { transform: translateX(0); }
+  main.app-main { width: 100%; }
+  .hamburger-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line);
+    background: white; cursor: pointer; margin-right: 8px; flex-shrink: 0;
+  }
+  .sidebar-overlay.open {
+    display: block; position: fixed; inset: 0; background: rgba(22,24,29,0.45); z-index: 39;
+  }
+}
