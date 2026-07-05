@@ -89,10 +89,24 @@ document.getElementById("logout-btn").onclick = async () => {
   location.reload();
 };
 
+// ---------- mobile sidebar drawer ----------
+
+const sidebarEl = document.querySelector(".app-sidebar");
+const overlayEl = document.getElementById("sidebar-overlay");
+document.getElementById("hamburger-btn").onclick = () => {
+  sidebarEl.classList.add("open");
+  overlayEl.classList.add("open");
+};
+function closeSidebar() {
+  sidebarEl.classList.remove("open");
+  overlayEl.classList.remove("open");
+}
+overlayEl.onclick = closeSidebar;
+
 // ---------- navigation ----------
 
 document.querySelectorAll(".nav-item").forEach((btn) => {
-  btn.onclick = () => showView(btn.dataset.view);
+  btn.onclick = () => { showView(btn.dataset.view); closeSidebar(); };
 });
 
 function showView(name) {
