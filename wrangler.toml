@@ -1,0 +1,28 @@
+name = "attendance-app"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Static frontend (login page, dashboard, etc.) served from /public
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# D1 database binding.
+# After running `wrangler d1 create attendance-db`, paste the returned
+# database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "attendance-db"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+
+# Runs once a day to flag employees who never checked in as absent,
+# and to raise late-arrival warnings. Adjust the UTC hour as needed.
+[triggers]
+crons = ["0 1 * * *"]
+
+[vars]
+# Used to derive session cookie security settings; set to your real
+# domain after deploying, e.g. "attendance-app.yourname.workers.dev"
+APP_ENV = "production"

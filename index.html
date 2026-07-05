@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Attendance</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="bg-app text-ink">
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="auth-screen" class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm">
+    <div class="flex items-center gap-2 mb-8 justify-center">
+      <div class="punch-badge">L</div>
+      <span class="font-display text-xl font-bold tracking-tight">Ledger</span>
+    </div>
+
+    <div class="card p-6">
+      <div class="flex mb-6 border-b border-line text-sm font-medium">
+        <button id="tab-login" class="auth-tab active-tab flex-1 pb-3">Sign in</button>
+        <button id="tab-register" class="auth-tab flex-1 pb-3">Create company</button>
+      </div>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="field-label">Email</label>
+          <input required type="email" id="login-email" class="field" placeholder="you@company.com" />
+        </div>
+        <div>
+          <label class="field-label">Password</label>
+          <input required type="password" id="login-password" class="field" placeholder="••••••••" />
+        </div>
+        <p id="login-error" class="text-sm text-danger hidden"></p>
+        <button class="btn-primary w-full">Sign in</button>
+      </form>
+
+      <form id="register-form" class="space-y-4 hidden">
+        <div>
+          <label class="field-label">Company name</label>
+          <input required id="reg-company" class="field" placeholder="Acme Logistics" />
+        </div>
+        <div>
+          <label class="field-label">Admin email</label>
+          <input required type="email" id="reg-email" class="field" placeholder="you@company.com" />
+        </div>
+        <div>
+          <label class="field-label">Password</label>
+          <input required type="password" id="reg-password" class="field" placeholder="At least 8 characters" />
+        </div>
+        <p id="register-error" class="text-sm text-danger hidden"></p>
+        <button class="btn-primary w-full">Create company &amp; admin account</button>
+      </form>
+    </div>
+    <p class="text-center text-xs text-muted mt-6">Each company's data is completely separate — employees only ever see their own team.</p>
+  </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="app-shell" class="hidden min-h-screen flex">
+
+  <aside class="w-60 shrink-0 bg-ink text-white flex flex-col">
+    <div class="flex items-center gap-2 px-5 h-16 border-b border-white/10">
+      <div class="punch-badge">L</div>
+      <span class="font-display font-bold tracking-tight">Ledger</span>
+    </div>
+    <nav class="flex-1 py-4 px-3 space-y-1 text-sm">
+      <button data-view="dashboard" class="nav-item active">Dashboard</button>
+      <button data-view="attendance" class="nav-item">Attendance</button>
+      <button data-view="employees" class="nav-item admin-only">Employees</button>
+      <button data-view="reports" class="nav-item">Reports</button>
+      <button data-view="notifications" class="nav-item">Notifications <span id="notif-dot" class="hidden ml-1 inline-block w-1.5 h-1.5 rounded-full bg-warning"></span></button>
+      <button data-view="settings" class="nav-item admin-only">Settings</button>
+    </nav>
+    <div class="p-4 border-t border-white/10 text-xs text-white/60">
+      <div id="who-am-i" class="mb-2"></div>
+      <button id="logout-btn" class="text-white/80 hover:text-white underline">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="h-16 border-b border-line bg-white flex items-center justify-between px-6">
+      <h1 id="view-title" class="font-display text-lg font-semibold">Dashboard</h1>
+      <div id="company-badge" class="text-sm text-muted"></div>
+    </header>
+
+    <div class="p-6 max-w-6xl mx-auto">
+
+      <!-- DASHBOARD -->
+      <section id="view-dashboard" class="view space-y-6">
+        <div class="ledger-strip">
+          <div>
+            <div class="text-xs uppercase tracking-wider text-white/60 mb-1" id="ledger-date"></div>
+            <div class="font-mono text-4xl font-semibold" id="ledger-clock">--:--:--</div>
+          </div>
+          <div class="flex gap-3">
+            <button id="btn-checkin" class="punch-btn punch-in">Check in</button>
+            <button id="btn-checkout" class="punch-btn punch-out">Check out</button>
+          </div>
+        </div>
+        <div id="dashboard-status" class="text-sm text-muted"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="stat-card"><div class="stat-label">Present today</div><div class="stat-value text-success" id="stat-present">–</div></div>
+          <div class="stat-card"><div class="stat-label">Late today</div><div class="stat-value text-warning" id="stat-late">–</div></div>
+          <div class="stat-card"><div class="stat-label">Absent today</div><div class="stat-value text-danger" id="stat-absent">–</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Today's team</div>
+          <div class="overflow-x-auto">
+            <table class="data-table" id="today-table"><thead><tr>
+              <th>Employee</th><th>Department</th><th>Check in</th><th>Check out</th><th>Status</th><th>Location</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section id="view-attendance" class="view hidden space-y-4">
+        <div class="card p-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label class="field-label">View</label>
+            <select id="att-view" class="field">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly" selected>Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Anchor date</label>
+            <input type="date" id="att-date" class="field" />
+          </div>
+          <div class="admin-only">
+            <label class="field-label">Employee</label>
+            <select id="att-employee" class="field"><option value="">All employees</option></select>
+          </div>
+          <button id="att-refresh" class="btn-secondary">Apply</button>
+        </div>
+        <div class="card">
+          <div class="card-header" id="att-range-label">Attendance</div>
+          <div class="overflow-x-auto">
+            <table class="data-table" id="att-table"><thead><tr>
+              <th>Date</th><th>Employee</th><th>Check in</th><th>Check out</th><th>Status</th><th>Verified</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- EMPLOYEES -->
+      <section id="view-employees" class="view hidden space-y-4">
+        <div class="flex justify-end">
+          <button id="btn-add-employee" class="btn-primary">Add employee</button>
+        </div>
+        <div class="card">
+          <div class="overflow-x-auto">
+            <table class="data-table" id="employees-table"><thead><tr>
+              <th>Name</th><th>Email</th><th>Department</th><th>Position</th><th>Status</th><th></th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="view-reports" class="view hidden space-y-4">
+        <div class="card p-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label class="field-label">From</label>
+            <input type="date" id="rep-start" class="field" />
+          </div>
+          <div>
+            <label class="field-label">To</label>
+            <input type="date" id="rep-end" class="field" />
+          </div>
+          <button id="rep-refresh" class="btn-secondary">Apply</button>
+          <div class="flex-1"></div>
+          <button id="export-csv" class="btn-ghost">Export CSV</button>
+          <button id="export-xlsx" class="btn-ghost">Export Excel</button>
+          <button id="export-pdf" class="btn-ghost">Export PDF</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="stat-card"><div class="stat-label">Attendance rate</div><div class="stat-value" id="rep-attendance-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Tardiness rate</div><div class="stat-value text-warning" id="rep-tardiness-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Absence rate</div><div class="stat-value text-danger" id="rep-absence-rate">–</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">By employee</div>
+          <div class="overflow-x-auto">
+            <table class="data-table" id="reports-table"><thead><tr>
+              <th>Employee</th><th>Department</th><th>Days tracked</th><th>Present</th><th>Late</th><th>Absent</th><th>Leave</th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section id="view-notifications" class="view hidden">
+        <div class="card divide-y divide-line" id="notifications-list"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="view hidden space-y-4 max-w-xl">
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Office location &amp; geofence</div>
+          <p class="text-sm text-muted -mt-2">Check-ins outside this radius are recorded but flagged as unverified.</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="field-label">Latitude</label><input id="set-lat" class="field font-mono" /></div>
+            <div><label class="field-label">Longitude</label><input id="set-lng" class="field font-mono" /></div>
+          </div>
+          <button id="set-use-location" class="btn-ghost text-xs">Use my current location</button>
+          <div><label class="field-label">Geofence radius (meters)</label><input id="set-radius" type="number" class="field" /></div>
+        </div>
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Work hours</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="field-label">Start time</label><input id="set-start" type="time" class="field" /></div>
+            <div><label class="field-label">End time</label><input id="set-end" type="time" class="field" /></div>
+          </div>
+          <div><label class="field-label">Late grace period (minutes)</label><input id="set-grace" type="number" class="field" /></div>
+          <button id="save-settings" class="btn-primary">Save settings</button>
+          <p id="settings-saved" class="text-sm text-success hidden">Saved.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Employee modal -->
+<div id="employee-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 class="font-display font-semibold text-lg mb-4" id="employee-modal-title">Add employee</h3>
+    <form id="employee-form" class="space-y-3">
+      <input type="hidden" id="emp-id" />
+      <div><label class="field-label">Full name</label><input required id="emp-name" class="field" /></div>
+      <div><label class="field-label">Email</label><input required type="email" id="emp-email" class="field" /></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="field-label">Department</label><input id="emp-department" class="field" /></div>
+        <div><label class="field-label">Position</label><input id="emp-position" class="field" /></div>
+      </div>
+      <div><label class="field-label">Phone</label><input id="emp-phone" class="field" /></div>
+      <div id="emp-status-wrap" class="hidden">
+        <label class="field-label">Status</label>
+        <select id="emp-status" class="field"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+      <div id="emp-login-wrap" class="border-t border-line pt-3">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="emp-create-login" /> Create a login for this employee</label>
+        <input type="password" id="emp-password" class="field mt-2 hidden" placeholder="Temporary password" />
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" id="employee-cancel" class="btn-ghost flex-1">Cancel</button>
+        <button class="btn-primary flex-1">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
