@@ -1,4 +1,4 @@
-# Ledger — Employee Attendance App
+# Ledger — Employee Attendance App 
 
 A multi-tenant attendance system built on **Cloudflare Workers** (serverless, runs on Cloudflare's edge network) with **D1** (SQLite) for persistent storage. Deploys to a live `*.workers.dev` URL (or your own domain) in a few commands.
 
@@ -15,7 +15,7 @@ A multi-tenant attendance system built on **Cloudflare Workers** (serverless, ru
 
 ## One-time setup
 
-You'll need a free Cloudflare account and Node.js installed.
+You'll need a free Cloudflare account and Node.js installed. 
 
 ```bash
 npm install -g wrangler      # Cloudflare's CLI, if you don't have it
