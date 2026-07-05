@@ -10,7 +10,7 @@ A multi-tenant attendance system built on **Cloudflare Workers** (serverless, ru
 - Geolocation capture on check-in/out + office geofence verification, plus IP logging
 - Admin vs. employee roles, cookie-based sessions
 - Daily scheduled job that auto-marks no-shows as absent and raises late-arrival notifications
-- Export to CSV, Excel (.xlsx), and PDF (print-to-PDF)
+- Export to CSV, Excel (.xlsx), and PDF (print-to-PDF) 
 - Every company's employees, attendance, and settings are isolated from every other company (multi-tenant)
 
 ## One-time setup 
