@@ -1,5 +1,11 @@
 const state = { me: null, employees: [] };
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 // ---------- helpers ----------
 
 async function api(path, opts = {}) {
