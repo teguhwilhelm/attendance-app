@@ -1,8 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "dev.workers.teguh_wilhelm.attendance_app.twa",
-    "sha256_cert_fingerprints": ["21:B9:EC:C5:27:E5:1A:96:7E:62:31:02:21:A0:A2:42:71:AA:C9:CC:7C:38:C9:FE:AC:DF:20:75:49:3F:9F:61"]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "dev.workers.teguh_wilhelm.attendance_app.twa",
+        "sha256_cert_fingerprints": ["3E:66:66:C0:A5:BD:50:BB:3C:9F:F0:03:64:18:EE:67:FB:AF:CE:82:83:46:34:EA:B0:FF:10:FD:D9:30:9F:98"]
+      }
+    }]
