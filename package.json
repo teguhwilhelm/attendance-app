@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "build:css": "tailwindcss -i ./src/tailwind-input.css -o ./public/tailwind.css --minify",
-    "db:init": "wrangler d1 execute attendance-db --file=./schema.sql",
-    "db:init:remote": "wrangler d1 execute attendance-db --remote --file=./schema.sql"
-  },
+  "dev": "wrangler dev",
+  "deploy": "wrangler deploy",
+  "build:css": "tailwindcss -i ./src/tailwind-input.css -o ./public/tailwind.css --minify",
+  "build": "npm run build:css && node scripts/generate-sw.js",
+  "db:init": "wrangler d1 execute attendance-db --file=./schema.sql",
+  "db:init:remote": "wrangler d1 execute attendance-db --remote --file=./schema.sql"
+},
   "dependencies": {
     "hono": "^4.6.3",
     "xlsx": "^0.18.5"
