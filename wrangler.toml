@@ -15,7 +15,7 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "attendance-db"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_id = "88d0ea25-a7be-481e-a923-119720edd0cb"
 
 # Runs once a day to flag employees who never checked in as absent,
 # and to raise late-arrival warnings. Adjust the UTC hour as needed.
