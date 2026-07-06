@@ -128,13 +128,70 @@ app.put("/api/company", async (c) => {
   return c.json({ ok: true });
 });
 
+// ---------- shifts (admin manages; anyone in the company can list them) ----------
+
+app.get("/api/shifts", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM shifts WHERE company_id = ? ORDER BY start_time"
+  )
+    .bind(user.company_id)
+    .all();
+  return c.json(results);
+});
+
+app.post("/api/shifts", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const b = await c.req.json();
+  if (!b.name || !b.start_time || !b.end_time) {
+    return c.json({ error: "name, start_time and end_time are required" }, 400);
+  }
+  const row = await c.env.DB.prepare(
+    "INSERT INTO shifts (company_id, name, start_time, end_time, late_grace_minutes) VALUES (?, ?, ?, ?, ?) RETURNING *"
+  )
+    .bind(user.company_id, b.name, b.start_time, b.end_time, b.late_grace_minutes ?? 10)
+    .first();
+  return c.json(row);
+});
+
+app.put("/api/shifts/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const b = await c.req.json();
+  await c.env.DB.prepare(
+    "UPDATE shifts SET name = ?, start_time = ?, end_time = ?, late_grace_minutes = ? WHERE id = ? AND company_id = ?"
+  )
+    .bind(b.name, b.start_time, b.end_time, b.late_grace_minutes ?? 10, id, user.company_id)
+    .run();
+  const row = await c.env.DB.prepare("SELECT * FROM shifts WHERE id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  return c.json(row);
+});
+
+app.delete("/api/shifts/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  await c.env.DB.prepare("UPDATE employees SET shift_id = NULL WHERE shift_id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .run();
+  await c.env.DB.prepare("DELETE FROM shifts WHERE id = ? AND company_id = ?").bind(id, user.company_id).run();
+  return c.json({ ok: true });
+});
+
 // ---------- employees (admin manages; employees can read their own record) ----------
 
 app.get("/api/employees", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
   const { results } = await c.env.DB.prepare(
-    "SELECT * FROM employees WHERE company_id = ? ORDER BY full_name"
+    `SELECT e.*, s.name as shift_name, s.start_time as shift_start, s.end_time as shift_end
+     FROM employees e LEFT JOIN shifts s ON s.id = e.shift_id
+     WHERE e.company_id = ? ORDER BY e.full_name`
   )
     .bind(user.company_id)
     .all();
@@ -147,10 +204,10 @@ app.post("/api/employees", async (c) => {
   const b = await c.req.json();
   if (!b.full_name || !b.email) return c.json({ error: "full_name and email are required" }, 400);
   const row = await c.env.DB.prepare(
-    `INSERT INTO employees (company_id, full_name, email, phone, department, position, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'active') RETURNING *`
+    `INSERT INTO employees (company_id, full_name, email, phone, department, position, shift_id, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'active') RETURNING *`
   )
-    .bind(user.company_id, b.full_name, b.email, b.phone ?? null, b.department ?? null, b.position ?? null)
+    .bind(user.company_id, b.full_name, b.email, b.phone ?? null, b.department ?? null, b.position ?? null, b.shift_id || null)
     .first();
 
   // Optionally create a login for this employee right away.
@@ -171,10 +228,10 @@ app.put("/api/employees/:id", async (c) => {
   const id = c.req.param("id");
   const b = await c.req.json();
   await c.env.DB.prepare(
-    `UPDATE employees SET full_name = ?, email = ?, phone = ?, department = ?, position = ?, status = ?
+    `UPDATE employees SET full_name = ?, email = ?, phone = ?, department = ?, position = ?, shift_id = ?, status = ?
      WHERE id = ? AND company_id = ?`
   )
-    .bind(b.full_name, b.email, b.phone ?? null, b.department ?? null, b.position ?? null, b.status ?? "active", id, user.company_id)
+    .bind(b.full_name, b.email, b.phone ?? null, b.department ?? null, b.position ?? null, b.shift_id || null, b.status ?? "active", id, user.company_id)
     .run();
   const row = await c.env.DB.prepare("SELECT * FROM employees WHERE id = ? AND company_id = ?")
     .bind(id, user.company_id)
@@ -207,6 +264,11 @@ app.post("/api/attendance/checkin", async (c) => {
   const b = await c.req.json().catch(() => ({}));
   const db = c.env.DB;
   const company = await db.prepare("SELECT * FROM companies WHERE id = ?").bind(user.company_id).first();
+  const employee = await db.prepare("SELECT shift_id FROM employees WHERE id = ?").bind(user.employee_id).first();
+  let shift = null;
+  if (employee?.shift_id) {
+    shift = await db.prepare("SELECT * FROM shifts WHERE id = ? AND company_id = ?").bind(employee.shift_id, user.company_id).first();
+  }
   const ip = c.req.header("CF-Connecting-IP") || "unknown";
   const now = new Date();
   const date = todayStr(now);
@@ -222,9 +284,11 @@ app.post("/api/attendance/checkin", async (c) => {
   const dist = distanceMeters(company.office_lat, company.office_lng, b.lat, b.lng);
   const verified = dist !== null ? dist <= (company.geofence_radius_m ?? 200) : 0;
 
-  const [h, m] = (company.work_start_time || "09:00").split(":").map(Number);
+  const startTime = shift ? shift.start_time : (company.work_start_time || "09:00");
+  const graceMinutes = shift ? shift.late_grace_minutes : (company.late_grace_minutes || 0);
+  const [h, m] = startTime.split(":").map(Number);
   const expectedStart = new Date(now);
-  expectedStart.setHours(h, m + (company.late_grace_minutes || 0), 0, 0);
+  expectedStart.setHours(h, m + graceMinutes, 0, 0);
   const status = now > expectedStart ? "late" : "present";
 
   if (existing) {
