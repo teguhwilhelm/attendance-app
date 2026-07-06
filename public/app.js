@@ -1,4 +1,4 @@
-const state = { me: null, employees: [] };
+const state = { me: null, employees: [], shifts: [] };
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -227,12 +227,63 @@ async function loadDashboard() {
     </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans">No attendance recorded yet today.</td></tr>`;
 }
 
+// ---------- shifts ----------
+
+async function loadShiftsQuiet() {
+  try { state.shifts = await api("/api/shifts"); } catch { state.shifts = []; }
+  const sel = document.getElementById("emp-shift");
+  const current = sel.value;
+  sel.innerHTML = `<option value="">Jam kerja default (tanpa shift)</option>` +
+    state.shifts.map((s) => `<option value="${s.id}">${s.name} (${s.start_time}–${s.end_time})</option>`).join("");
+  sel.value = current;
+}
+
+async function loadShiftsSettings() {
+  await loadShiftsQuiet();
+  document.getElementById("shifts-list").innerHTML = state.shifts.map((s) => `
+    <div class="flex items-center justify-between border border-line rounded-lg px-3 py-2 text-sm">
+      <div>
+        <span class="font-medium">${s.name}</span>
+        <span class="text-muted font-mono ml-2">${s.start_time}–${s.end_time}</span>
+        <span class="text-muted text-xs ml-2">toleransi ${s.late_grace_minutes}m</span>
+      </div>
+      <button class="text-danger underline text-xs" onclick="deleteShift(${s.id})">Hapus</button>
+    </div>`).join("") || `<p class="text-sm text-muted">Belum ada shift dibuat.</p>`;
+}
+
+window.deleteShift = async (id) => {
+  if (!confirm("Hapus shift ini? Karyawan yang memakainya akan kembali ke jam kerja default.")) return;
+  await api(`/api/shifts/${id}`, { method: "DELETE" });
+  toast("Shift dihapus");
+  loadShiftsSettings();
+};
+
+document.getElementById("add-shift-btn").onclick = async () => {
+  const body = {
+    name: document.getElementById("shift-name").value,
+    start_time: document.getElementById("shift-start").value,
+    end_time: document.getElementById("shift-end").value,
+    late_grace_minutes: parseInt(document.getElementById("shift-grace").value) || 0,
+  };
+  if (!body.name || !body.start_time || !body.end_time) { toast("Isi nama, jam mulai, dan jam selesai dulu"); return; }
+  try {
+    await api("/api/shifts", { method: "POST", body: JSON.stringify(body) });
+    document.getElementById("shift-name").value = "";
+    document.getElementById("shift-start").value = "";
+    document.getElementById("shift-end").value = "";
+    document.getElementById("shift-grace").value = "10";
+    toast("Shift ditambahkan");
+    loadShiftsSettings();
+  } catch (err) { toast(err.message); }
+};
+
 // ---------- employees ----------
 
 async function loadEmployeesQuiet() {
   try { state.employees = await api("/api/employees"); } catch { state.employees = []; }
   const sel = document.getElementById("att-employee");
   sel.innerHTML = `<option value="">All employees</option>` + state.employees.map((e) => `<option value="${e.id}">${e.full_name}</option>`).join("");
+  await loadShiftsQuiet();
 }
 
 async function loadEmployees() {
@@ -244,12 +295,13 @@ async function loadEmployees() {
       <td class="font-sans">${e.email}</td>
       <td class="font-sans">${e.department || "—"}</td>
       <td class="font-sans">${e.position || "—"}</td>
+      <td class="font-sans">${e.shift_name ? `${e.shift_name} (${e.shift_start}–${e.shift_end})` : "Default"}</td>
       <td>${e.status === "active" ? '<span class="badge badge-present">Active</span>' : '<span class="badge badge-half_day">Inactive</span>'}</td>
       <td class="font-sans text-xs whitespace-nowrap">
         <button class="text-primary underline mr-2" onclick="editEmployee(${e.id})">Edit</button>
         <button class="text-danger underline" onclick="deleteEmployee(${e.id})">Delete</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
 }
 
 document.getElementById("btn-add-employee").onclick = () => openEmployeeModal();
@@ -267,6 +319,7 @@ function openEmployeeModal(emp) {
   document.getElementById("emp-department").value = emp ? emp.department || "" : "";
   document.getElementById("emp-position").value = emp ? emp.position || "" : "";
   document.getElementById("emp-phone").value = emp ? emp.phone || "" : "";
+  document.getElementById("emp-shift").value = emp ? (emp.shift_id || "") : "";
   document.getElementById("emp-status").value = emp ? emp.status : "active";
   document.getElementById("emp-status-wrap").classList.toggle("hidden", !emp);
   document.getElementById("emp-login-wrap").classList.toggle("hidden", !!emp);
@@ -292,6 +345,7 @@ document.getElementById("employee-form").onsubmit = async (e) => {
     department: document.getElementById("emp-department").value,
     position: document.getElementById("emp-position").value,
     phone: document.getElementById("emp-phone").value,
+    shift_id: document.getElementById("emp-shift").value || null,
     status: document.getElementById("emp-status").value,
     create_login: document.getElementById("emp-create-login").checked,
     password: document.getElementById("emp-password").value,
@@ -418,6 +472,7 @@ async function loadSettings() {
   document.getElementById("set-start").value = c.work_start_time ?? "09:00";
   document.getElementById("set-end").value = c.work_end_time ?? "17:00";
   document.getElementById("set-grace").value = c.late_grace_minutes ?? 10;
+  await loadShiftsSettings();
 }
 document.getElementById("set-use-location").onclick = async () => {
   const loc = await getLocation();
