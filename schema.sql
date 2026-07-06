@@ -13,6 +13,16 @@ CREATE TABLE IF NOT EXISTS companies (
   created_at         TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS shifts (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id         INTEGER NOT NULL REFERENCES companies(id),
+  name               TEXT NOT NULL,          -- e.g. "Pagi", "Sore", "Malam"
+  start_time         TEXT NOT NULL,          -- "07:00"
+  end_time           TEXT NOT NULL,          -- "15:00"
+  late_grace_minutes INTEGER DEFAULT 10,
+  created_at         TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS employees (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   company_id    INTEGER NOT NULL REFERENCES companies(id),
@@ -21,6 +31,7 @@ CREATE TABLE IF NOT EXISTS employees (
   phone         TEXT,
   department    TEXT,
   position      TEXT,
+  shift_id      INTEGER REFERENCES shifts(id),
   status        TEXT DEFAULT 'active' CHECK(status IN ('active','inactive')),
   created_at    TEXT DEFAULT (datetime('now'))
 );
@@ -79,3 +90,4 @@ CREATE INDEX IF NOT EXISTS idx_attendance_company_date  ON attendance(company_id
 CREATE INDEX IF NOT EXISTS idx_employees_company         ON employees(company_id);
 CREATE INDEX IF NOT EXISTS idx_users_company             ON users(company_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_company     ON notifications(company_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_shifts_company             ON shifts(company_id);
