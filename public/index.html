@@ -169,7 +169,7 @@
         <div class="card">
           <div class="overflow-x-auto">
             <table class="data-table" id="employees-table"><thead><tr>
-              <th>Name</th><th>Email</th><th>Department</th><th>Position</th><th>Status</th><th></th>
+              <th>Name</th><th>Email</th><th>Department</th><th>Position</th><th>Shift</th><th>Status</th><th></th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
@@ -236,8 +236,21 @@
           <button id="save-settings" class="btn-primary">Save settings</button>
           <p id="settings-saved" class="text-sm text-success hidden">Saved.</p>
         </div>
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Shifts</div>
+          <p class="text-sm text-muted -mt-2">Buat shift kalau karyawan tidak semua masuk di jam yang sama (misal Pagi/Sore/Malam). Karyawan tanpa shift memakai jam kerja default di atas.</p>
+          <div id="shifts-list" class="space-y-2"></div>
+          <div class="border-t border-line pt-3 space-y-2">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="col-span-2"><label class="field-label">Nama shift</label><input id="shift-name" class="field" placeholder="Pagi" /></div>
+              <div><label class="field-label">Jam mulai</label><input id="shift-start" type="time" class="field" /></div>
+              <div><label class="field-label">Jam selesai</label><input id="shift-end" type="time" class="field" /></div>
+            </div>
+            <div><label class="field-label">Toleransi telat (menit)</label><input id="shift-grace" type="number" class="field" value="10" /></div>
+            <button id="add-shift-btn" class="btn-secondary w-full">Tambah shift</button>
+          </div>
+        </div>
       </section>
-
     </div>
   </main>
 </div>
@@ -255,6 +268,9 @@
         <div><label class="field-label">Position</label><input id="emp-position" class="field" /></div>
       </div>
       <div><label class="field-label">Phone</label><input id="emp-phone" class="field" /></div>
+      <div><label class="field-label">Shift</label>
+        <select id="emp-shift" class="field"><option value="">Jam kerja default (tanpa shift)</option></select>
+      </div>
       <div id="emp-status-wrap" class="hidden">
         <label class="field-label">Status</label>
         <select id="emp-status" class="field"><option value="active">Active</option><option value="inactive">Inactive</option></select>
