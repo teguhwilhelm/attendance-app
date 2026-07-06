@@ -255,6 +255,20 @@ app.delete("/api/employees/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+app.post("/api/employees/:id/link-me", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const emp = await c.env.DB.prepare("SELECT id FROM employees WHERE id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  if (!emp) return c.json({ error: "Employee not found" }, 404);
+  await c.env.DB.prepare("UPDATE users SET employee_id = ? WHERE id = ? AND company_id = ?")
+    .bind(id, user.id, user.company_id)
+    .run();
+  return c.json({ ok: true });
+});
+
 // ---------- attendance ----------
 
 app.post("/api/attendance/checkin", async (c) => {
