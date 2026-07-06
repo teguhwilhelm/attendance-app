@@ -288,6 +288,7 @@ async function loadEmployeesQuiet() {
 
 async function loadEmployees() {
   await loadEmployeesQuiet();
+  const myEmployeeId = state.me?.user?.employee_id;
   const tbody = document.querySelector("#employees-table tbody");
   tbody.innerHTML = state.employees.map((e) => `
     <tr>
@@ -299,10 +300,25 @@ async function loadEmployees() {
       <td>${e.status === "active" ? '<span class="badge badge-present">Active</span>' : '<span class="badge badge-half_day">Inactive</span>'}</td>
       <td class="font-sans text-xs whitespace-nowrap">
         <button class="text-primary underline mr-2" onclick="editEmployee(${e.id})">Edit</button>
-        <button class="text-danger underline" onclick="deleteEmployee(${e.id})">Delete</button>
+        <button class="text-danger underline mr-2" onclick="deleteEmployee(${e.id})">Delete</button>
+        ${myEmployeeId === e.id
+          ? '<span class="text-success">✓ Ini saya</span>'
+          : (state.me?.user?.role === "admin" ? `<button class="text-muted underline" onclick="linkMe(${e.id})">Jadikan akun saya</button>` : "")}
       </td>
     </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
 }
+
+window.linkMe = async (id) => {
+  if (!confirm("Hubungkan akun admin kamu ke data karyawan ini? Kamu akan bisa check-in/check-out pakai akun ini.")) return;
+  try {
+    await api(`/api/employees/${id}/link-me`, { method: "POST" });
+    state.me = await api("/api/auth/me");
+    document.getElementById("btn-checkin").disabled = false;
+    document.getElementById("btn-checkout").disabled = false;
+    toast("Akun kamu sekarang terhubung ke data karyawan ini");
+    loadEmployees();
+  } catch (err) { toast(err.message); }
+};
 
 document.getElementById("btn-add-employee").onclick = () => openEmployeeModal();
 document.getElementById("employee-cancel").onclick = () => closeEmployeeModal();
