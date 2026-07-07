@@ -211,6 +211,7 @@ app.post("/api/employees", async (c) => {
     .first();
 
   // Optionally create a login for this employee right away.
+  
   if (b.create_login && b.password) {
     const { hash, salt } = await hashPassword(b.password);
     await c.env.DB.prepare(
@@ -365,6 +366,7 @@ app.post("/api/attendance/checkout", async (c) => {
 });
 
 // view=daily|weekly|monthly, date=YYYY-MM-DD (anchor), employee_id optional (admin only, else forced to self)
+
 app.get("/api/attendance", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
@@ -403,6 +405,16 @@ let query = `SELECT a.*, e.full_name, e.department FROM attendance a
   query += " ORDER BY a.work_date DESC, e.full_name";
   const { results } = await c.env.DB.prepare(query).bind(...args).all();
   return c.json({ start, end, records: results });
+});
+
+app.delete("/api/attendance/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  await c.env.DB.prepare("DELETE FROM attendance WHERE id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .run();
+  return c.json({ ok: true });
 });
 
 // ---------- reports ----------
