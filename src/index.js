@@ -392,7 +392,7 @@ app.get("/api/attendance", async (c) => {
     end = todayStr(last);
   }
 
-  let query = `SELECT a.*, e.full_name, e.department FROM attendance a
+let query = `SELECT a.*, e.full_name, e.department FROM attendance a
                JOIN employees e ON e.id = a.employee_id
                WHERE a.company_id = ? AND a.work_date BETWEEN ? AND ?`;
   const args = [user.company_id, start, end];
