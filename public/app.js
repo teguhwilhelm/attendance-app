@@ -386,6 +386,7 @@ async function loadAttendance() {
   const q = new URLSearchParams({ view, date, ...(employee_id ? { employee_id } : {}) });
   const { start, end, records } = await api(`/api/attendance?${q}`);
   document.getElementById("att-range-label").textContent = start === end ? start : `${start} → ${end}`;
+  const isAdmin = state.me?.user?.role === "admin";
   document.querySelector("#att-table tbody").innerHTML = records.map((r) => `
     <tr>
       <td>${r.work_date}</td>
@@ -394,8 +395,18 @@ async function loadAttendance() {
       <td>${fmtTime(r.check_out_time)}</td>
       <td>${badge(r.status)}</td>
       <td class="font-sans text-xs">${r.check_in_time ? (r.check_in_verified ? "✅" : "⚠️") : "—"}</td>
-    </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans p-4">No records for this range.</td></tr>`;
+      <td class="font-sans text-xs">${isAdmin ? `<button class="text-danger underline" onclick="deleteAttendance(${r.id})">Delete</button>` : ""}</td>
+    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No records for this range.</td></tr>`;
 }
+
+window.deleteAttendance = async (id) => {
+  if (!confirm("Hapus catatan absensi ini? Tindakan ini tidak bisa dibatalkan.")) return;
+  try {
+    await api(`/api/attendance/${id}`, { method: "DELETE" });
+    toast("Catatan dihapus");
+    loadAttendance();
+  } catch (err) { toast(err.message); }
+};
 
 // ---------- reports ----------
 
