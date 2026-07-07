@@ -38,6 +38,32 @@ function todayStr(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+// Blocks access once a company's trial or subscription has lapsed.
+// Auth and billing endpoints stay reachable so people can still log in
+// and pay even when locked out of everything else.
+app.use("/api/*", async (c, next) => {
+  const path = c.req.path;
+  if (path.startsWith("/api/auth/") || path.startsWith("/api/billing/")) return next();
+  const user = c.get("user");
+  if (!user) return next();
+
+  const company = await c.env.DB.prepare(
+    "SELECT plan_status, trial_ends_at, subscription_expires_at FROM companies WHERE id = ?"
+  )
+    .bind(user.company_id)
+    .first();
+  const now = new Date();
+  const trialActive = company.trial_ends_at && new Date(company.trial_ends_at) > now;
+  const subActive =
+    company.plan_status === "active" &&
+    company.subscription_expires_at &&
+    new Date(company.subscription_expires_at) > now;
+  if (!trialActive && !subActive) {
+    return c.json({ error: "Trial/subscription expired", code: "SUBSCRIPTION_REQUIRED" }, 402);
+  }
+  await next();
+});
+
 // ---------- auth ----------
 
 // Creates a brand new company + its first admin user.
@@ -50,9 +76,10 @@ app.post("/api/auth/register", async (c) => {
   const existing = await db.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
   if (existing) return c.json({ error: "That email is already registered" }, 409);
 
+  const trialEnds = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
   const company = await db
-    .prepare("INSERT INTO companies (name) VALUES (?) RETURNING id")
-    .bind(company_name)
+    .prepare("INSERT INTO companies (name, plan_status, trial_ends_at) VALUES (?, 'trial', ?) RETURNING id")
+    .bind(company_name, trialEnds)
     .first();
 
   const { hash, salt } = await hashPassword(password);
@@ -599,6 +626,109 @@ app.post("/api/notifications/:id/read", async (c) => {
   await c.env.DB.prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND company_id = ?")
     .bind(c.req.param("id"), user.company_id)
     .run();
+  return c.json({ ok: true });
+});
+
+// ---------- billing ----------
+
+const MONTHLY_PRICE_IDR = 150000;
+
+app.get("/api/billing/status", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  const company = await c.env.DB.prepare(
+    "SELECT plan_status, trial_ends_at, subscription_expires_at FROM companies WHERE id = ?"
+  )
+    .bind(user.company_id)
+    .first();
+  const now = new Date();
+  const trialActive = company.trial_ends_at && new Date(company.trial_ends_at) > now;
+  const subActive =
+    company.plan_status === "active" &&
+    company.subscription_expires_at &&
+    new Date(company.subscription_expires_at) > now;
+  return c.json({
+    plan_status: company.plan_status,
+    trial_ends_at: company.trial_ends_at,
+    subscription_expires_at: company.subscription_expires_at,
+    is_active: trialActive || subActive,
+    trial_days_left: trialActive ? Math.ceil((new Date(company.trial_ends_at) - now) / 86400000) : 0,
+    monthly_price: MONTHLY_PRICE_IDR,
+  });
+});
+
+app.post("/api/billing/checkout", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const company = await c.env.DB.prepare("SELECT * FROM companies WHERE id = ?").bind(user.company_id).first();
+  const orderId = `SUB-${user.company_id}-${Date.now()}`;
+  await c.env.DB.prepare("INSERT INTO payments (company_id, order_id, amount, status) VALUES (?, ?, ?, 'pending')")
+    .bind(user.company_id, orderId, MONTHLY_PRICE_IDR)
+    .run();
+
+  const midtransUrl =
+    c.env.MIDTRANS_IS_PRODUCTION === "true"
+      ? "https://app.midtrans.com/snap/v1/transactions"
+      : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+  const auth = btoa(`${c.env.MIDTRANS_SERVER_KEY}:`);
+
+  const res = await fetch(midtransUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
+    body: JSON.stringify({
+      transaction_details: { order_id: orderId, gross_amount: MONTHLY_PRICE_IDR },
+      customer_details: { email: user.email, first_name: company.name },
+      item_details: [{ id: "subscription-monthly", price: MONTHLY_PRICE_IDR, quantity: 1, name: "Ledger — Langganan bulanan" }],
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) return c.json({ error: data.error_messages?.join(", ") || "Failed to create payment" }, 500);
+  return c.json({
+    token: data.token,
+    redirect_url: data.redirect_url,
+    client_key: c.env.MIDTRANS_CLIENT_KEY,
+    is_production: c.env.MIDTRANS_IS_PRODUCTION === "true",
+  });
+});
+
+app.post("/api/billing/notification", async (c) => {
+  const body = await c.req.json();
+  const { order_id, status_code, gross_amount, signature_key, transaction_status, fraud_status } = body;
+
+  const raw = `${order_id}${status_code}${gross_amount}${c.env.MIDTRANS_SERVER_KEY}`;
+  const digest = await crypto.subtle.digest("SHA-512", new TextEncoder().encode(raw));
+  const expected = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  if (expected !== signature_key) return c.json({ error: "Invalid signature" }, 403);
+
+  const payment = await c.env.DB.prepare("SELECT * FROM payments WHERE order_id = ?").bind(order_id).first();
+  if (!payment) return c.json({ error: "Unknown order" }, 404);
+
+  const isSuccess = transaction_status === "capture" || transaction_status === "settlement";
+  const isFailed = ["deny", "cancel", "expire"].includes(transaction_status);
+
+  if (isSuccess && fraud_status !== "deny") {
+    await c.env.DB.prepare(
+      "UPDATE payments SET status = 'paid', paid_at = datetime('now'), midtrans_transaction_id = ? WHERE order_id = ?"
+    )
+      .bind(body.transaction_id || null, order_id)
+      .run();
+
+    const company = await c.env.DB.prepare("SELECT subscription_expires_at, plan_status FROM companies WHERE id = ?")
+      .bind(payment.company_id)
+      .first();
+    const now = new Date();
+    const base =
+      company.plan_status === "active" && company.subscription_expires_at && new Date(company.subscription_expires_at) > now
+        ? new Date(company.subscription_expires_at)
+        : now;
+    base.setDate(base.getDate() + 30);
+    await c.env.DB.prepare("UPDATE companies SET plan_status = 'active', subscription_expires_at = ? WHERE id = ?")
+      .bind(base.toISOString(), payment.company_id)
+      .run();
+  } else if (isFailed) {
+    await c.env.DB.prepare("UPDATE payments SET status = ? WHERE order_id = ?").bind(transaction_status, order_id).run();
+  }
+
   return c.json({ ok: true });
 });
 
