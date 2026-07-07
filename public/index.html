@@ -177,20 +177,23 @@
 
       <!-- REPORTS -->
       <section id="view-reports" class="view hidden space-y-4">
-        <div class="card p-4 flex flex-wrap items-end gap-3">
-          <div>
-            <label class="field-label">From</label>
-            <input type="date" id="rep-start" class="field" />
+        <div class="card p-4 space-y-3">
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="field-label">From</label>
+              <input type="date" id="rep-start" class="field" />
+            </div>
+            <div>
+              <label class="field-label">To</label>
+              <input type="date" id="rep-end" class="field" />
+            </div>
+            <button id="rep-refresh" class="btn-secondary">Apply</button>
           </div>
-          <div>
-            <label class="field-label">To</label>
-            <input type="date" id="rep-end" class="field" />
+          <div class="flex gap-2 pt-3 border-t border-line">
+            <button id="export-csv" class="btn-ghost flex-1">CSV</button>
+            <button id="export-xlsx" class="btn-ghost flex-1">Excel</button>
+            <button id="export-pdf" class="btn-ghost flex-1">PDF</button>
           </div>
-          <button id="rep-refresh" class="btn-secondary">Apply</button>
-          <div class="flex-1"></div>
-          <button id="export-csv" class="btn-ghost">Export CSV</button>
-          <button id="export-xlsx" class="btn-ghost">Export Excel</button>
-          <button id="export-pdf" class="btn-ghost">Export PDF</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
