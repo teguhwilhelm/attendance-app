@@ -189,8 +189,11 @@ app.get("/api/employees", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT e.*, s.name as shift_name, s.start_time as shift_start, s.end_time as shift_end
-     FROM employees e LEFT JOIN shifts s ON s.id = e.shift_id
+    `SELECT e.*, s.name as shift_name, s.start_time as shift_start, s.end_time as shift_end,
+            u.id as user_id, u.role as user_role
+     FROM employees e
+     LEFT JOIN shifts s ON s.id = e.shift_id
+     LEFT JOIN users u ON u.employee_id = e.id
      WHERE e.company_id = ? ORDER BY e.full_name`
   )
     .bind(user.company_id)
@@ -266,6 +269,22 @@ app.post("/api/employees/:id/link-me", async (c) => {
   if (!emp) return c.json({ error: "Employee not found" }, 404);
   await c.env.DB.prepare("UPDATE users SET employee_id = ? WHERE id = ? AND company_id = ?")
     .bind(id, user.id, user.company_id)
+    .run();
+  return c.json({ ok: true });
+});
+
+app.post("/api/employees/:id/set-role", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const { role } = await c.req.json();
+  if (!["admin", "employee"].includes(role)) return c.json({ error: "role must be admin or employee" }, 400);
+  const target = await c.env.DB.prepare("SELECT id FROM users WHERE employee_id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  if (!target) return c.json({ error: "This employee doesn't have a login yet" }, 400);
+  await c.env.DB.prepare("UPDATE users SET role = ? WHERE employee_id = ? AND company_id = ?")
+    .bind(role, id, user.company_id)
     .run();
   return c.json({ ok: true });
 });
