@@ -290,23 +290,42 @@ async function loadEmployees() {
   await loadEmployeesQuiet();
   const myEmployeeId = state.me?.user?.employee_id;
   const tbody = document.querySelector("#employees-table tbody");
-  tbody.innerHTML = state.employees.map((e) => `
+  tbody.innerHTML = state.employees.map((e) => {
+    const roleLabel = !e.user_id ? '<span class="text-muted text-xs">No login</span>'
+      : e.user_role === "admin" ? '<span class="badge badge-present">Admin</span>'
+      : '<span class="badge badge-half_day">Employee</span>';
+    const roleToggle = (myEmployeeId !== e.id && e.user_id)
+      ? `<button class="text-muted underline" onclick="setEmployeeRole(${e.id}, '${e.user_role === "admin" ? "employee" : "admin"}')">${e.user_role === "admin" ? "Jadikan karyawan" : "Jadikan admin"}</button>`
+      : "";
+    return `
     <tr>
       <td class="font-sans font-medium">${e.full_name}</td>
       <td class="font-sans">${e.email}</td>
       <td class="font-sans">${e.department || "—"}</td>
       <td class="font-sans">${e.position || "—"}</td>
       <td class="font-sans">${e.shift_name ? `${e.shift_name} (${e.shift_start}–${e.shift_end})` : "Default"}</td>
+      <td>${roleLabel}</td>
       <td>${e.status === "active" ? '<span class="badge badge-present">Active</span>' : '<span class="badge badge-half_day">Inactive</span>'}</td>
-      <td class="font-sans text-xs whitespace-nowrap">
-        <button class="text-primary underline mr-2" onclick="editEmployee(${e.id})">Edit</button>
-        <button class="text-danger underline mr-2" onclick="deleteEmployee(${e.id})">Delete</button>
-        ${myEmployeeId === e.id
-          ? '<span class="text-success">✓ Ini saya</span>'
-          : (state.me?.user?.role === "admin" ? `<button class="text-muted underline" onclick="linkMe(${e.id})">Jadikan akun saya</button>` : "")}
+      <td class="font-sans text-xs whitespace-nowrap space-x-2">
+        <button class="text-primary underline" onclick="editEmployee(${e.id})">Edit</button>
+        <button class="text-danger underline" onclick="deleteEmployee(${e.id})">Delete</button>
+        ${myEmployeeId === e.id ? '<span class="text-success">✓ Ini saya</span>' : ""}
+        ${roleToggle}
+        ${myEmployeeId !== e.id && !e.user_id && state.me?.user?.role === "admin" ? `<button class="text-muted underline" onclick="linkMe(${e.id})">Jadikan akun saya</button>` : ""}
       </td>
-    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
+    </tr>`;
+  }).join("") || `<tr><td colspan="8" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
 }
+
+window.setEmployeeRole = async (id, role) => {
+  const label = role === "admin" ? "menjadikan orang ini admin" : "mengembalikan orang ini jadi karyawan biasa";
+  if (!confirm(`Yakin ${label}?`)) return;
+  try {
+    await api(`/api/employees/${id}/set-role`, { method: "POST", body: JSON.stringify({ role }) });
+    toast("Role berhasil diubah");
+    loadEmployees();
+  } catch (err) { toast(err.message); }
+};
 
 window.linkMe = async (id) => {
   if (!confirm("Hubungkan akun admin kamu ke data karyawan ini? Kamu akan bisa check-in/check-out pakai akun ini.")) return;
