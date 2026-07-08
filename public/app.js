@@ -140,13 +140,14 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
   document.getElementById("view-title").textContent = {
     dashboard: "Dashboard", attendance: "Attendance", employees: "Employees",
-    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings",
+    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing",
   }[name];
   if (name === "employees") loadEmployees();
   if (name === "attendance") loadAttendance();
   if (name === "reports") loadReports();
   if (name === "notifications") loadNotifications();
   if (name === "settings") loadSettings();
+  if (name === "billing") loadBilling();
 }
 
 // ---------- boot ----------
@@ -155,6 +156,17 @@ async function boot() {
   try {
     const me = await api("/api/auth/me");
     state.me = me;
+
+    const billing = await api("/api/billing/status").catch(() => ({ is_active: true }));
+    state.billing = billing;
+    if (!billing.is_active) {
+      document.getElementById("auth-screen").classList.add("hidden");
+      document.getElementById("app-shell").classList.add("hidden");
+      showPaywall(billing);
+      return;
+    }
+    document.getElementById("paywall-screen").classList.add("hidden");
+
     document.getElementById("auth-screen").classList.add("hidden");
     document.getElementById("app-shell").classList.remove("hidden");
     document.body.classList.toggle("is-admin", me.user.role === "admin");
@@ -174,6 +186,61 @@ async function boot() {
   } catch {
     document.getElementById("auth-screen").classList.remove("hidden");
     document.getElementById("app-shell").classList.add("hidden");
+    document.getElementById("paywall-screen").classList.add("hidden");
+  }
+}
+
+// ---------- billing / paywall ----------
+
+function formatIDR(n) {
+  return "Rp" + Number(n).toLocaleString("id-ID");
+}
+
+function showPaywall(billing) {
+  document.getElementById("paywall-screen").classList.remove("hidden");
+  document.getElementById("paywall-message").textContent =
+    billing.plan_status === "trial"
+      ? "Masa trial gratis 14 hari kamu sudah habis."
+      : "Langganan bulanan kamu sudah berakhir.";
+  document.getElementById("paywall-price").textContent = formatIDR(billing.monthly_price) + " / bulan";
+}
+
+async function startCheckout() {
+  try {
+    const res = await api("/api/billing/checkout", { method: "POST" });
+    document.head.querySelectorAll('script[data-snap]').forEach((s) => s.remove());
+    const script = document.createElement("script");
+    script.setAttribute("data-snap", "1");
+    script.setAttribute("data-client-key", res.client_key);
+    script.src = res.is_production ? "https://app.midtrans.com/snap/snap.js" : "https://app.sandbox.midtrans.com/snap/snap.js";
+    script.onload = () => {
+      window.snap.pay(res.token, {
+        onSuccess: () => { toast("Pembayaran berhasil!"); boot(); },
+        onPending: () => toast("Pembayaran diproses, mohon tunggu konfirmasi."),
+        onError: () => toast("Pembayaran gagal, coba lagi."),
+        onClose: () => {},
+      });
+    };
+    document.head.appendChild(script);
+  } catch (err) { toast(err.message); }
+}
+
+document.getElementById("paywall-pay-btn").onclick = startCheckout;
+document.getElementById("billing-pay-btn").onclick = startCheckout;
+document.getElementById("paywall-logout-btn").onclick = async () => {
+  await api("/api/auth/logout", { method: "POST" });
+  location.reload();
+};
+
+async function loadBilling() {
+  const billing = await api("/api/billing/status");
+  const el = document.getElementById("billing-status-text");
+  if (billing.plan_status === "trial") {
+    el.innerHTML = `Kamu sedang masa trial gratis — <b>${billing.trial_days_left} hari lagi</b>. Setelah itu, langganan bulanan ${formatIDR(billing.monthly_price)}.`;
+  } else if (billing.is_active) {
+    el.innerHTML = `Langganan aktif sampai <b>${new Date(billing.subscription_expires_at).toLocaleDateString("id-ID")}</b>.`;
+  } else {
+    el.innerHTML = `Langganan sudah berakhir. Bayar ${formatIDR(billing.monthly_price)} untuk mengaktifkan lagi.`;
   }
 }
 
