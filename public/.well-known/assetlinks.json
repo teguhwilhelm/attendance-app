@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "dev.workers.teguh_wilhelm.attendance_app.twa",
-        "sha256_cert_fingerprints": ["E9:80:47:E1:B9:74:A7:39:32:8D:CB:E5:7D:84:38:51:88:3A:AA:52:AD:D7:3B:93:C5:3A:60:AF:3C:9D:08:E0"]
-      }
-    }]
