@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "dev.workers.employee_attendance.ledger.twa",
+        "sha256_cert_fingerprints": ["2C:EC:52:60:5F:09:72:9B:45:55:C5:E5:21:E4:CB:95:6D:7E:0D:8C:EC:98:DD:CF:72:B7:92:0A:5D:5A:E7:8A"]
+      }
+    }]
