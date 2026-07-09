@@ -433,9 +433,11 @@ function closeEmployeeModal() { document.getElementById("employee-modal").classL
 window.editEmployee = (id) => openEmployeeModal(state.employees.find((e) => e.id === id));
 window.deleteEmployee = async (id) => {
   if (!confirm("Delete this employee and all of their attendance history? This cannot be undone.")) return;
-  await api(`/api/employees/${id}`, { method: "DELETE" });
-  toast("Employee deleted");
-  loadEmployees();
+  try {
+    await api(`/api/employees/${id}`, { method: "DELETE" });
+    toast("Employee deleted");
+    loadEmployees();
+  } catch (err) { toast(err.message); }
 };
 
 document.getElementById("employee-form").onsubmit = async (e) => {
