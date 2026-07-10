@@ -255,6 +255,40 @@ app.delete("/api/shifts/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+app.get("/api/holidays", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  const { results } = await c.env.DB.prepare("SELECT * FROM holidays WHERE company_id = ? ORDER BY date")
+    .bind(user.company_id)
+    .all();
+  return c.json(results);
+});
+
+app.post("/api/holidays", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const b = await c.req.json();
+  if (!b.date || !b.name) return c.json({ error: "date and name are required" }, 400);
+  try {
+    const row = await c.env.DB.prepare(
+      "INSERT INTO holidays (company_id, date, name) VALUES (?, ?, ?) RETURNING *"
+    )
+      .bind(user.company_id, b.date, b.name)
+      .first();
+    return c.json(row);
+  } catch {
+    return c.json({ error: "Tanggal itu sudah terdaftar sebagai hari libur" }, 409);
+  }
+});
+
+app.delete("/api/holidays/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  await c.env.DB.prepare("DELETE FROM holidays WHERE id = ? AND company_id = ?").bind(id, user.company_id).run();
+  return c.json({ ok: true });
+});
+
 // ---------- employees (admin manages; employees can read their own record) ----------
 
 app.get("/api/employees", async (c) => {
@@ -805,6 +839,12 @@ async function runDailySweep(env) {
   const yesterday = todayStr(new Date(Date.now() - 86400000));
   const { results: companies } = await db.prepare("SELECT id FROM companies").all();
   for (const company of companies) {
+    const holiday = await db
+      .prepare("SELECT id FROM holidays WHERE company_id = ? AND date = ?")
+      .bind(company.id, yesterday)
+      .first();
+    if (holiday) continue;
+
     const { results: employees } = await db
       .prepare("SELECT id FROM employees WHERE company_id = ? AND status = 'active'")
       .bind(company.id)
