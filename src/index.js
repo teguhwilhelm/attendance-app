@@ -115,6 +115,50 @@ app.post("/api/auth/logout", async (c) => {
   return c.json({ ok: true });
 });
 
+app.post("/api/auth/forgot-password", async (c) => {
+  const { email } = await c.req.json();
+  const db = c.env.DB;
+  const user = await db.prepare("SELECT id, email FROM users WHERE email = ?").bind(email).first();
+  if (user) {
+    const token = generateToken();
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    await db.prepare("INSERT INTO password_resets (token, user_id, expires_at) VALUES (?, ?, ?)")
+      .bind(token, user.id, expires)
+      .run();
+    const resetUrl = `https://${c.req.header("Host")}/?reset=${token}`;
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${c.env.RESEND_API_KEY}` },
+      body: JSON.stringify({
+        from: "Ledger <onboarding@resend.dev>",
+        to: [user.email],
+        subject: "Reset password akun Ledger kamu",
+        html: `<p>Klik link berikut untuk atur ulang password kamu. Link ini berlaku selama 1 jam:</p>
+               <p><a href="${resetUrl}">${resetUrl}</a></p>
+               <p>Kalau kamu tidak meminta ini, abaikan saja email ini.</p>`,
+      }),
+    }).catch(() => {});
+  }
+  return c.json({ ok: true });
+});
+
+app.post("/api/auth/reset-password", async (c) => {
+  const { token, password } = await c.req.json();
+  if (!token || !password || password.length < 6) {
+    return c.json({ error: "Token dan password (minimal 6 karakter) wajib diisi" }, 400);
+  }
+  const db = c.env.DB;
+  const reset = await db.prepare("SELECT * FROM password_resets WHERE token = ?").bind(token).first();
+  if (!reset || reset.used || new Date(reset.expires_at) < new Date()) {
+    return c.json({ error: "Link reset tidak valid atau sudah kadaluarsa" }, 400);
+  }
+  const { hash, salt } = await hashPassword(password);
+  await db.prepare("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?").bind(hash, salt, reset.user_id).run();
+  await db.prepare("UPDATE password_resets SET used = 1 WHERE token = ?").bind(token).run();
+  await db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(reset.user_id).run();
+  return c.json({ ok: true });
+});
+
 app.get("/api/auth/me", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
