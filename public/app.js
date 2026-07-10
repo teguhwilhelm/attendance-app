@@ -114,6 +114,57 @@ document.getElementById("logout-btn").onclick = async () => {
   location.reload();
 };
 
+// ---------- forgot / reset password ----------
+
+document.getElementById("show-forgot").onclick = () => {
+  document.getElementById("login-form").classList.add("hidden");
+  document.getElementById("register-form").classList.add("hidden");
+  document.getElementById("forgot-form").classList.remove("hidden");
+};
+document.getElementById("back-to-login").onclick = () => {
+  document.getElementById("forgot-form").classList.add("hidden");
+  setAuthTab("login");
+};
+
+document.getElementById("forgot-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("forgot-email").value;
+  const msgEl = document.getElementById("forgot-message");
+  try {
+    await api("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+    msgEl.textContent = "Kalau email itu terdaftar, link reset password sudah dikirim. Cek inbox/spam kamu.";
+    msgEl.classList.remove("hidden", "text-danger");
+    msgEl.classList.add("text-success");
+  } catch (err) {
+    msgEl.textContent = err.message;
+    msgEl.classList.remove("hidden", "text-success");
+    msgEl.classList.add("text-danger");
+  }
+};
+
+document.getElementById("reset-password-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const token = new URLSearchParams(location.search).get("reset");
+  const password = document.getElementById("reset-password-input").value;
+  const errEl = document.getElementById("reset-password-error");
+  try {
+    await api("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) });
+    toast("Password berhasil diubah, silakan sign in.");
+    location.href = location.origin;
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  }
+};
+
+(function checkResetLink() {
+  const token = new URLSearchParams(location.search).get("reset");
+  if (token) {
+    document.getElementById("auth-screen").classList.add("hidden");
+    document.getElementById("reset-password-screen").classList.remove("hidden");
+  }
+})();
+
 // ---------- mobile sidebar drawer ----------
 
 const sidebarEl = document.querySelector(".app-sidebar");
@@ -184,7 +235,9 @@ async function boot() {
     await loadDashboard();
     await pollNotifDot();
   } catch {
-    document.getElementById("auth-screen").classList.remove("hidden");
+    if (!new URLSearchParams(location.search).get("reset")) {
+      document.getElementById("auth-screen").classList.remove("hidden");
+    }
     document.getElementById("app-shell").classList.add("hidden");
     document.getElementById("paywall-screen").classList.add("hidden");
   }
