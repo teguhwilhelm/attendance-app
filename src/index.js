@@ -9,6 +9,7 @@ import {
   sessionCookie,
   clearCookie,
   distanceMeters,
+  generateToken,
 } from "./auth.js";
 
 const app = new Hono();
