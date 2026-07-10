@@ -108,3 +108,4 @@ CREATE INDEX IF NOT EXISTS idx_employees_company         ON employees(company_id
 CREATE INDEX IF NOT EXISTS idx_users_company             ON users(company_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_company     ON notifications(company_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_shifts_company             ON shifts(company_id);
+CREATE INDEX IF NOT EXISTS idx_holidays_company ON holidays(company_id, date);
