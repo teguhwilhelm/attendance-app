@@ -23,6 +23,15 @@ CREATE TABLE IF NOT EXISTS shifts (
   created_at         TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS holidays (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id  INTEGER NOT NULL REFERENCES companies(id),
+  date        TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  created_at  TEXT DEFAULT (datetime('now')),
+  UNIQUE(company_id, date)
+);
+
 CREATE TABLE IF NOT EXISTS employees (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   company_id    INTEGER NOT NULL REFERENCES companies(id),
