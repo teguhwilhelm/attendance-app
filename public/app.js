@@ -117,9 +117,7 @@ document.getElementById("logout-btn").onclick = async () => {
 // ---------- forgot / reset password ----------
 
 document.getElementById("show-forgot").onclick = () => {
-  document.getElementById("login-form").classList.add("hidden");
-  document.getElementById("register-form").classList.add("hidden");
-  document.getElementById("forgot-form").classList.remove("hidden");
+  alert("Untuk reset password, hubungi admin perusahaan kamu. Admin bisa reset password kamu langsung dari halaman Employees.");
 };
 document.getElementById("back-to-login").onclick = () => {
   document.getElementById("forgot-form").classList.add("hidden");
@@ -429,6 +427,7 @@ async function loadEmployees() {
       <td class="font-sans text-xs whitespace-nowrap space-x-2">
         <button class="text-primary underline" onclick="editEmployee(${e.id})">Edit</button>
         <button class="text-danger underline" onclick="deleteEmployee(${e.id})">Delete</button>
+        ${e.user_id ? `<button class="text-muted underline" onclick="resetEmployeePassword(${e.id})">Reset password</button>` : ""}
         ${myEmployeeId === e.id ? '<span class="text-success">✓ Ini saya</span>' : ""}
         ${roleToggle}
         ${myEmployeeId !== e.id && !e.user_id && state.me?.user?.role === "admin" ? `<button class="text-muted underline" onclick="linkMe(${e.id})">Jadikan akun saya</button>` : ""}
@@ -436,6 +435,16 @@ async function loadEmployees() {
     </tr>`;
   }).join("") || `<tr><td colspan="8" class="text-muted font-sans p-4">No employees yet — add your first one.</td></tr>`;
 }
+
+window.resetEmployeePassword = async (id) => {
+  const password = prompt("Masukkan password baru untuk karyawan ini (minimal 6 karakter):");
+  if (!password) return;
+  if (password.length < 6) { toast("Password minimal 6 karakter"); return; }
+  try {
+    await api(`/api/employees/${id}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
+    toast("Password berhasil direset. Kasih tau password baru ini ke karyawannya langsung.");
+  } catch (err) { toast(err.message); }
+};
 
 window.setEmployeeRole = async (id, role) => {
   const label = role === "admin" ? "menjadikan orang ini admin" : "mengembalikan orang ini jadi karyawan biasa";
