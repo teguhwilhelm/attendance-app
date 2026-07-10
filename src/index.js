@@ -364,6 +364,24 @@ app.post("/api/employees/:id/set-role", async (c) => {
   return c.json({ ok: true });
 });
 
+app.post("/api/employees/:id/reset-password", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const { password } = await c.req.json();
+  if (!password || password.length < 6) return c.json({ error: "Password minimal 6 karakter" }, 400);
+  const target = await c.env.DB.prepare("SELECT id FROM users WHERE employee_id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  if (!target) return c.json({ error: "Karyawan ini belum punya login" }, 400);
+  const { hash, salt } = await hashPassword(password);
+  await c.env.DB.prepare("UPDATE users SET password_hash = ?, salt = ? WHERE employee_id = ? AND company_id = ?")
+    .bind(hash, salt, id, user.company_id)
+    .run();
+  await c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(target.id).run();
+  return c.json({ ok: true });
+});
+
 // ---------- attendance ----------
 
 app.post("/api/attendance/checkin", async (c) => {
