@@ -689,6 +689,16 @@ document.getElementById("add-holiday-btn").onclick = async () => {
   } catch (err) { toast(err.message); }
 };
 
+document.getElementById("import-holidays-btn").onclick = async () => {
+  const year = new Date().getFullYear();
+  if (!confirm(`Impor hari libur nasional Indonesia tahun ${year}? Data yang sudah ada tidak akan diduplikat.`)) return;
+  try {
+    const res = await api("/api/holidays/import", { method: "POST", body: JSON.stringify({ year }) });
+    toast(`Berhasil impor ${res.imported} hari libur baru (dari ${res.total} total tahun ${year}).`);
+    loadHolidays();
+  } catch (err) { toast(err.message); }
+};
+
 document.getElementById("set-use-location").onclick = async () => {
   const loc = await getLocation();
   if (loc.lat) { document.getElementById("set-lat").value = loc.lat; document.getElementById("set-lng").value = loc.lng; }
