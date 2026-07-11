@@ -39,6 +39,17 @@ function todayStr(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+function dateRange(start, end) {
+  const dates = [];
+  let d = new Date(start + "T00:00:00");
+  const endD = new Date(end + "T00:00:00");
+  while (d <= endD) {
+    dates.push(todayStr(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
 // Blocks access once a company's trial or subscription has lapsed.
 // Auth and billing endpoints stay reachable so people can still log in
 // and pay even when locked out of everything else.
@@ -311,6 +322,93 @@ app.post("/api/holidays/import", async (c) => {
     if (result.meta?.changes) imported++;
   }
   return c.json({ ok: true, imported, total: list.length });
+});
+
+// ---------- leave requests ----------
+
+app.get("/api/leave-requests", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  let query = `SELECT lr.*, e.full_name FROM leave_requests lr JOIN employees e ON e.id = lr.employee_id WHERE lr.company_id = ?`;
+  const args = [user.company_id];
+  if (user.role !== "admin") {
+    query += " AND lr.employee_id = ?";
+    args.push(user.employee_id);
+  }
+  query += " ORDER BY lr.created_at DESC";
+  const { results } = await c.env.DB.prepare(query).bind(...args).all();
+  return c.json(results);
+});
+
+app.post("/api/leave-requests", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  if (!user.employee_id) return c.json({ error: "Akun ini tidak terhubung ke data karyawan" }, 400);
+  const b = await c.req.json();
+  if (!b.start_date || !b.end_date) return c.json({ error: "Tanggal mulai dan selesai wajib diisi" }, 400);
+  if (new Date(b.end_date) < new Date(b.start_date)) {
+    return c.json({ error: "Tanggal selesai harus sama atau setelah tanggal mulai" }, 400);
+  }
+  const row = await c.env.DB.prepare(
+    "INSERT INTO leave_requests (company_id, employee_id, start_date, end_date, reason) VALUES (?, ?, ?, ?, ?) RETURNING *"
+  )
+    .bind(user.company_id, user.employee_id, b.start_date, b.end_date, b.reason || null)
+    .first();
+  return c.json(row);
+});
+
+app.post("/api/leave-requests/:id/approve", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const reqRow = await c.env.DB.prepare("SELECT * FROM leave_requests WHERE id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  if (!reqRow) return c.json({ error: "Not found" }, 404);
+  await c.env.DB.prepare(
+    "UPDATE leave_requests SET status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?"
+  )
+    .bind(user.id, id)
+    .run();
+  for (const date of dateRange(reqRow.start_date, reqRow.end_date)) {
+    const existing = await c.env.DB.prepare(
+      "SELECT id, check_in_time FROM attendance WHERE employee_id = ? AND work_date = ?"
+    )
+      .bind(reqRow.employee_id, date)
+      .first();
+    if (!existing) {
+      await c.env.DB.prepare(
+        "INSERT INTO attendance (company_id, employee_id, work_date, status) VALUES (?, ?, ?, 'on_leave')"
+      )
+        .bind(user.company_id, reqRow.employee_id, date)
+        .run();
+    } else if (!existing.check_in_time) {
+      await c.env.DB.prepare("UPDATE attendance SET status = 'on_leave' WHERE id = ?").bind(existing.id).run();
+    }
+  }
+  await c.env.DB.prepare("INSERT INTO notifications (company_id, employee_id, type, message) VALUES (?, ?, 'system', ?)")
+    .bind(user.company_id, reqRow.employee_id, `Pengajuan cuti ${reqRow.start_date} - ${reqRow.end_date} disetujui`)
+    .run();
+  return c.json({ ok: true });
+});
+
+app.post("/api/leave-requests/:id/reject", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const reqRow = await c.env.DB.prepare("SELECT * FROM leave_requests WHERE id = ? AND company_id = ?")
+    .bind(id, user.company_id)
+    .first();
+  if (!reqRow) return c.json({ error: "Not found" }, 404);
+  await c.env.DB.prepare(
+    "UPDATE leave_requests SET status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?"
+  )
+    .bind(user.id, id)
+    .run();
+  await c.env.DB.prepare("INSERT INTO notifications (company_id, employee_id, type, message) VALUES (?, ?, 'system', ?)")
+    .bind(user.company_id, reqRow.employee_id, `Pengajuan cuti ${reqRow.start_date} - ${reqRow.end_date} ditolak`)
+    .run();
+  return c.json({ ok: true });
 });
 
 // ---------- employees (admin manages; employees can read their own record) ----------
