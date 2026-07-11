@@ -189,7 +189,7 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
   document.getElementById("view-title").textContent = {
     dashboard: "Dashboard", attendance: "Attendance", employees: "Employees",
-    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing", leave: "Cuti",
+    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing", leave: "Leave",
   }[name];
   if (name === "employees") loadEmployees();
   if (name === "attendance") loadAttendance();
