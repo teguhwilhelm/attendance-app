@@ -289,6 +289,30 @@ app.delete("/api/holidays/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+app.post("/api/holidays/import", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const { year } = await c.req.json();
+  const y = year || new Date().getFullYear();
+  const res = await fetch(`https://api-hari-libur.vercel.app/api?year=${y}`);
+  if (!res.ok) return c.json({ error: "Gagal mengambil data hari libur nasional" }, 502);
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data.data || [];
+  let imported = 0;
+  for (const h of list) {
+    const date = h.date;
+    const name = h.description || h.name || h.summary?.[0] || "Hari libur nasional";
+    if (!date) continue;
+    const result = await c.env.DB.prepare(
+      "INSERT OR IGNORE INTO holidays (company_id, date, name) VALUES (?, ?, ?)"
+    )
+      .bind(user.company_id, date, name)
+      .run();
+    if (result.meta?.changes) imported++;
+  }
+  return c.json({ ok: true, imported, total: list.length });
+});
+
 // ---------- employees (admin manages; employees can read their own record) ----------
 
 app.get("/api/employees", async (c) => {
