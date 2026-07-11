@@ -650,7 +650,45 @@ async function loadSettings() {
   document.getElementById("set-end").value = c.work_end_time ?? "17:00";
   document.getElementById("set-grace").value = c.late_grace_minutes ?? 10;
   await loadShiftsSettings();
+  await loadHolidays();
 }
+
+// ---------- holidays ----------
+
+async function loadHolidays() {
+  const holidays = await api("/api/holidays");
+  document.getElementById("holidays-list").innerHTML = holidays.map((h) => `
+    <div class="flex items-center justify-between border border-line rounded-lg px-3 py-2 text-sm">
+      <div>
+        <span class="font-mono">${h.date}</span>
+        <span class="ml-2">${h.name}</span>
+      </div>
+      <button class="text-danger underline text-xs" onclick="deleteHoliday(${h.id})">Hapus</button>
+    </div>`).join("") || `<p class="text-sm text-muted">Belum ada hari libur ditambahkan.</p>`;
+}
+
+window.deleteHoliday = async (id) => {
+  if (!confirm("Hapus hari libur ini?")) return;
+  await api(`/api/holidays/${id}`, { method: "DELETE" });
+  toast("Hari libur dihapus");
+  loadHolidays();
+};
+
+document.getElementById("add-holiday-btn").onclick = async () => {
+  const body = {
+    date: document.getElementById("holiday-date").value,
+    name: document.getElementById("holiday-name").value,
+  };
+  if (!body.date || !body.name) { toast("Isi tanggal dan nama hari libur dulu"); return; }
+  try {
+    await api("/api/holidays", { method: "POST", body: JSON.stringify(body) });
+    document.getElementById("holiday-date").value = "";
+    document.getElementById("holiday-name").value = "";
+    toast("Hari libur ditambahkan");
+    loadHolidays();
+  } catch (err) { toast(err.message); }
+};
+
 document.getElementById("set-use-location").onclick = async () => {
   const loc = await getLocation();
   if (loc.lat) { document.getElementById("set-lat").value = loc.lat; document.getElementById("set-lng").value = loc.lng; }
