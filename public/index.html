@@ -287,6 +287,18 @@
             <button id="add-shift-btn" class="btn-secondary w-full">Tambah shift</button>
           </div>
         </div>
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Hari libur</div>
+          <p class="text-sm text-muted -mt-2">Tanggal di bawah ini nggak akan otomatis ditandai "Absent" walau karyawan tidak check-in.</p>
+          <div id="holidays-list" class="space-y-2"></div>
+          <div class="border-t border-line pt-3 space-y-2">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="field-label">Tanggal</label><input id="holiday-date" type="date" class="field" /></div>
+              <div><label class="field-label">Nama libur</label><input id="holiday-name" class="field" placeholder="Idul Fitri" /></div>
+            </div>
+            <button id="add-holiday-btn" class="btn-secondary w-full">Tambah hari libur</button>
+          </div>
+        </div>
       </section>
 
       <!-- BILLING -->
