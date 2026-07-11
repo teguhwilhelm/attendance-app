@@ -112,6 +112,7 @@
       <button data-view="employees" class="nav-item admin-only">Employees</button>
       <button data-view="reports" class="nav-item">Reports</button>
       <button data-view="notifications" class="nav-item">Notifications <span id="notif-dot" class="hidden ml-1 inline-block w-1.5 h-1.5 rounded-full bg-warning"></span></button>
+      <button data-view="leave" class="nav-item">Cuti</button>
       <button data-view="settings" class="nav-item admin-only">Settings</button>
       <button data-view="billing" class="nav-item admin-only">Billing</button>
     </nav>
@@ -249,6 +250,27 @@
       <!-- NOTIFICATIONS -->
       <section id="view-notifications" class="view hidden">
         <div class="card divide-y divide-line" id="notifications-list"></div>
+      </section>
+
+      <!-- LEAVE -->
+      <section id="view-leave" class="view hidden space-y-4">
+        <div class="card p-5 space-y-3" id="leave-form-card">
+          <div class="card-header !p-0 !border-0 mb-1">Ajukan cuti</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="field-label">Dari tanggal</label><input id="leave-start" type="date" class="field" /></div>
+            <div><label class="field-label">Sampai tanggal</label><input id="leave-end" type="date" class="field" /></div>
+          </div>
+          <div><label class="field-label">Alasan (opsional)</label><input id="leave-reason" class="field" placeholder="Acara keluarga, sakit, dll" /></div>
+          <button id="submit-leave-btn" class="btn-primary w-full">Ajukan cuti</button>
+        </div>
+        <div class="card">
+          <div class="card-header">Riwayat pengajuan cuti</div>
+          <div class="overflow-x-auto">
+            <table class="data-table" id="leave-table"><thead><tr>
+              <th>Karyawan</th><th>Dari</th><th>Sampai</th><th>Alasan</th><th>Status</th><th></th>
+            </tr></thead><tbody></tbody></table>
+          </div>
+        </div>
       </section>
 
       <!-- SETTINGS -->
