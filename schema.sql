@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS holidays (
   UNIQUE(company_id, date)
 );
 
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id   INTEGER NOT NULL REFERENCES companies(id),
+  employee_id  INTEGER NOT NULL REFERENCES employees(id),
+  start_date   TEXT NOT NULL,
+  end_date     TEXT NOT NULL,
+  reason       TEXT,
+  status       TEXT NOT NULL DEFAULT 'pending',
+  reviewed_by  INTEGER REFERENCES users(id),
+  reviewed_at  TEXT,
+  created_at   TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS employees (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   company_id    INTEGER NOT NULL REFERENCES companies(id),
@@ -109,3 +122,4 @@ CREATE INDEX IF NOT EXISTS idx_users_company             ON users(company_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_company     ON notifications(company_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_shifts_company             ON shifts(company_id);
 CREATE INDEX IF NOT EXISTS idx_holidays_company ON holidays(company_id, date);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_company ON leave_requests(company_id);
