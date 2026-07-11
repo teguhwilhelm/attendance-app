@@ -189,7 +189,7 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
   document.getElementById("view-title").textContent = {
     dashboard: "Dashboard", attendance: "Attendance", employees: "Employees",
-    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing",
+    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing", leave: "Cuti",
   }[name];
   if (name === "employees") loadEmployees();
   if (name === "attendance") loadAttendance();
@@ -197,6 +197,7 @@ function showView(name) {
   if (name === "notifications") loadNotifications();
   if (name === "settings") loadSettings();
   if (name === "billing") loadBilling();
+  if (name === "leave") loadLeave();
 }
 
 // ---------- boot ----------
@@ -718,6 +719,57 @@ document.getElementById("save-settings").onclick = async (e) => {
   const el = document.getElementById("settings-saved");
   el.classList.remove("hidden");
   setTimeout(() => el.classList.add("hidden"), 2000);
+};
+
+// ---------- leave requests ----------
+
+async function loadLeave() {
+  document.getElementById("leave-form-card").classList.toggle("hidden", !state.me?.employee);
+  const requests = await api("/api/leave-requests");
+  const isAdmin = state.me?.user?.role === "admin";
+  document.querySelector("#leave-table tbody").innerHTML = requests.map((r) => {
+    const badgeClass = r.status === "approved" ? "badge-present" : r.status === "rejected" ? "badge-absent" : "badge-late";
+    const label = r.status === "approved" ? "Disetujui" : r.status === "rejected" ? "Ditolak" : "Menunggu";
+    const actions = (isAdmin && r.status === "pending")
+      ? `<button class="text-success underline mr-2" onclick="reviewLeave(${r.id}, 'approve')">Setujui</button><button class="text-danger underline" onclick="reviewLeave(${r.id}, 'reject')">Tolak</button>`
+      : "";
+    return `
+    <tr>
+      <td class="font-sans">${r.full_name}</td>
+      <td>${r.start_date}</td>
+      <td>${r.end_date}</td>
+      <td class="font-sans">${r.reason || "—"}</td>
+      <td><span class="badge ${badgeClass}">${label}</span></td>
+      <td class="font-sans text-xs whitespace-nowrap">${actions}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" class="text-muted font-sans p-4">Belum ada pengajuan cuti.</td></tr>`;
+}
+
+document.getElementById("submit-leave-btn").onclick = async () => {
+  const body = {
+    start_date: document.getElementById("leave-start").value,
+    end_date: document.getElementById("leave-end").value,
+    reason: document.getElementById("leave-reason").value,
+  };
+  if (!body.start_date || !body.end_date) { toast("Isi tanggal mulai dan selesai dulu"); return; }
+  try {
+    await api("/api/leave-requests", { method: "POST", body: JSON.stringify(body) });
+    document.getElementById("leave-start").value = "";
+    document.getElementById("leave-end").value = "";
+    document.getElementById("leave-reason").value = "";
+    toast("Pengajuan cuti terkirim");
+    loadLeave();
+  } catch (err) { toast(err.message); }
+};
+
+window.reviewLeave = async (id, action) => {
+  const label = action === "approve" ? "menyetujui" : "menolak";
+  if (!confirm(`Yakin ${label} pengajuan cuti ini?`)) return;
+  try {
+    await api(`/api/leave-requests/${id}/${action}`, { method: "POST" });
+    toast("Berhasil diproses");
+    loadLeave();
+  } catch (err) { toast(err.message); }
 };
 
 boot();
