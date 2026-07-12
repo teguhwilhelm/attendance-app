@@ -266,6 +266,8 @@ app.delete("/api/shifts/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+// ---------- holidays ----------
+
 app.get("/api/holidays", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
@@ -408,6 +410,14 @@ app.post("/api/leave-requests/:id/reject", async (c) => {
   await c.env.DB.prepare("INSERT INTO notifications (company_id, employee_id, type, message) VALUES (?, ?, 'system', ?)")
     .bind(user.company_id, reqRow.employee_id, `Pengajuan cuti ${reqRow.start_date} - ${reqRow.end_date} ditolak`)
     .run();
+  return c.json({ ok: true });
+});
+
+app.delete("/api/leave-requests/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  await c.env.DB.prepare("DELETE FROM leave_requests WHERE id = ? AND company_id = ?").bind(id, user.company_id).run();
   return c.json({ ok: true });
 });
 
