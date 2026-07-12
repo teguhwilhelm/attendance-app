@@ -40,7 +40,7 @@
         </div>
         <p id="login-error" class="text-sm text-danger hidden"></p>
         <button class="btn-primary w-full">Sign In</button>
-        <button type="button" id="show-forgot" class="text-xs text-primary underline block mx-auto">Lupa password?</button>
+        <button type="button" id="show-forgot" class="text-xs text-primary underline block mx-auto">Forgot The Password?</button>
       </form>
 
       <form id="register-form" class="space-y-4 hidden">
@@ -61,13 +61,13 @@
       </form>
 
       <form id="forgot-form" class="space-y-4 hidden">
-        <p class="text-sm text-muted">Masukkan Email Akun Kamu, Kami Kirimkan Link Untuk Atur Ulang Password.</p>
+        <p class="text-sm text-muted">Enter Your Account Email, You Will Be Sent A Link To Reset Your Password</p>
         <div>
           <label class="field-label">Email</label>
           <input required type="email" id="forgot-email" class="field" placeholder="you@company.com" />
         </div>
         <p id="forgot-message" class="text-sm hidden"></p>
-        <button class="btn-primary w-full">Kirim Link Reset</button>
+        <button class="btn-primary w-full">Send Reset Link</button>
         <button type="button" id="back-to-login" class="text-xs text-muted underline block mx-auto">Kembali Ke Sign In</button>
       </form>
     </div>
@@ -118,7 +118,7 @@
     </nav>
     <div class="p-4 border-t border-white/10 text-xs text-white/60">
       <div id="who-am-i" class="mb-2"></div>
-      <button id="logout-btn" class="text-white/80 hover:text-white underline">Sign out</button>
+      <button id="logout-btn" class="text-white/80 hover:text-white underline">Sign Out</button>
     </div>
   </aside>
 
@@ -143,23 +143,23 @@
             <div class="font-mono text-4xl font-semibold" id="ledger-clock">--:--:--</div>
           </div>
           <div class="flex gap-3">
-            <button id="btn-checkin" class="punch-btn punch-in">Check in</button>
-            <button id="btn-checkout" class="punch-btn punch-out">Check out</button>
+            <button id="btn-checkin" class="punch-btn punch-in">Check In</button>
+            <button id="btn-checkout" class="punch-btn punch-out">Check Out</button>
           </div>
         </div>
         <div id="dashboard-status" class="text-sm text-muted"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="stat-card"><div class="stat-label">Present today</div><div class="stat-value text-success" id="stat-present">–</div></div>
-          <div class="stat-card"><div class="stat-label">Late today</div><div class="stat-value text-warning" id="stat-late">–</div></div>
-          <div class="stat-card"><div class="stat-label">Absent today</div><div class="stat-value text-danger" id="stat-absent">–</div></div>
+          <div class="stat-card"><div class="stat-label">Present Today</div><div class="stat-value text-success" id="stat-present">–</div></div>
+          <div class="stat-card"><div class="stat-label">Late Today</div><div class="stat-value text-warning" id="stat-late">–</div></div>
+          <div class="stat-card"><div class="stat-label">Absent Today</div><div class="stat-value text-danger" id="stat-absent">–</div></div>
         </div>
 
         <div class="card">
-          <div class="card-header">Today's team</div>
+          <div class="card-header">Today's Team</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="today-table"><thead><tr>
-              <th>Employee</th><th>Department</th><th>Check in</th><th>Check out</th><th>Status</th><th>Location</th>
+              <th>Employee</th><th>Department</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Location</th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
@@ -177,12 +177,12 @@
             </select>
           </div>
           <div>
-            <label class="field-label">Anchor date</label>
+            <label class="field-label">Anchor Date</label>
             <input type="date" id="att-date" class="field" />
           </div>
           <div class="admin-only">
             <label class="field-label">Employee</label>
-            <select id="att-employee" class="field"><option value="">All employees</option></select>
+            <select id="att-employee" class="field"><option value="">All Employees</option></select>
           </div>
           <button id="att-refresh" class="btn-secondary">Apply</button>
         </div>
@@ -190,7 +190,7 @@
           <div class="card-header" id="att-range-label">Attendance</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="att-table"><thead><tr>
-              <th>Date</th><th>Employee</th><th>Check in</th><th>Check out</th><th>Status</th><th>Verified</th><th></th>
+              <th>Date</th><th>Employee</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Verified</th><th></th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
@@ -199,7 +199,7 @@
       <!-- EMPLOYEES -->
       <section id="view-employees" class="view hidden space-y-4">
         <div class="flex justify-end">
-          <button id="btn-add-employee" class="btn-primary">Add employee</button>
+          <button id="btn-add-employee" class="btn-primary">Add Employee</button>
         </div>
         <div class="card">
           <div class="overflow-x-auto">
@@ -232,16 +232,16 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="stat-card"><div class="stat-label">Attendance rate</div><div class="stat-value" id="rep-attendance-rate">–</div></div>
-          <div class="stat-card"><div class="stat-label">Tardiness rate</div><div class="stat-value text-warning" id="rep-tardiness-rate">–</div></div>
-          <div class="stat-card"><div class="stat-label">Absence rate</div><div class="stat-value text-danger" id="rep-absence-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Attendance Rate</div><div class="stat-value" id="rep-attendance-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Tardiness Rate</div><div class="stat-value text-warning" id="rep-tardiness-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Absence Rate</div><div class="stat-value text-danger" id="rep-absence-rate">–</div></div>
         </div>
 
         <div class="card">
-          <div class="card-header">By employee</div>
+          <div class="card-header">By Employee</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="reports-table"><thead><tr>
-              <th>Employee</th><th>Department</th><th>Days tracked</th><th>Present</th><th>Late</th><th>Absent</th><th>Leave</th>
+              <th>Employee</th><th>Department</th><th>Days Tracked</th><th>Present</th><th>Late</th><th>Absent</th><th>Leave</th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
@@ -255,19 +255,19 @@
       <!-- LEAVE -->
       <section id="view-leave" class="view hidden space-y-4">
         <div class="card p-5 space-y-3" id="leave-form-card">
-          <div class="card-header !p-0 !border-0 mb-1">Ajukan cuti</div>
+          <div class="card-header !p-0 !border-0 mb-1">Apply For Leave</div>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="field-label">Dari tanggal</label><input id="leave-start" type="date" class="field" /></div>
-            <div><label class="field-label">Sampai tanggal</label><input id="leave-end" type="date" class="field" /></div>
+            <div><label class="field-label">From Date</label><input id="leave-start" type="date" class="field" /></div>
+            <div><label class="field-label">To Date</label><input id="leave-end" type="date" class="field" /></div>
           </div>
-          <div><label class="field-label">Alasan (opsional)</label><input id="leave-reason" class="field" placeholder="Acara keluarga, sakit, dll" /></div>
-          <button id="submit-leave-btn" class="btn-primary w-full">Ajukan cuti</button>
+          <div><label class="field-label">Reason (Opsional)</label><input id="leave-reason" class="field" placeholder="Acara keluarga, sakit, dll" /></div>
+          <button id="submit-leave-btn" class="btn-primary w-full">Submit</button>
         </div>
         <div class="card">
-          <div class="card-header">Riwayat pengajuan cuti</div>
+          <div class="card-header">Leave Application History</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="leave-table"><thead><tr>
-              <th>Karyawan</th><th>Dari</th><th>Sampai</th><th>Alasan</th><th>Status</th><th></th>
+              <th>Employee</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th></th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
@@ -276,50 +276,50 @@
       <!-- SETTINGS -->
       <section id="view-settings" class="view hidden space-y-4 max-w-xl">
         <div class="card p-5 space-y-4">
-          <div class="card-header !p-0 !border-0 mb-1">Office location &amp; geofence</div>
-          <p class="text-sm text-muted -mt-2">Check-ins outside this radius are recorded but flagged as unverified.</p>
+          <div class="card-header !p-0 !border-0 mb-1">Office Location &amp; Geofence</div>
+          <p class="text-sm text-muted -mt-2">Check-Ins Outside This Radius Are Recorded But Flagged As Unverified</p>
           <div class="grid grid-cols-2 gap-3">
             <div><label class="field-label">Latitude</label><input id="set-lat" class="field font-mono" /></div>
             <div><label class="field-label">Longitude</label><input id="set-lng" class="field font-mono" /></div>
           </div>
-          <button id="set-use-location" class="btn-ghost text-xs">Use my current location</button>
-          <div><label class="field-label">Geofence radius (meters)</label><input id="set-radius" type="number" class="field" /></div>
+          <button id="set-use-location" class="btn-ghost text-xs">Use My Current Location</button>
+          <div><label class="field-label">Geofence Radius (Meters)</label><input id="set-radius" type="number" class="field" /></div>
         </div>
         <div class="card p-5 space-y-4">
-          <div class="card-header !p-0 !border-0 mb-1">Work hours</div>
+          <div class="card-header !p-0 !border-0 mb-1">Work Hours</div>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="field-label">Start time</label><input id="set-start" type="time" class="field" /></div>
-            <div><label class="field-label">End time</label><input id="set-end" type="time" class="field" /></div>
+            <div><label class="field-label">Start Time</label><input id="set-start" type="time" class="field" /></div>
+            <div><label class="field-label">End Time</label><input id="set-end" type="time" class="field" /></div>
           </div>
-          <div><label class="field-label">Late grace period (minutes)</label><input id="set-grace" type="number" class="field" /></div>
-          <button id="save-settings" class="btn-primary">Save settings</button>
-          <p id="settings-saved" class="text-sm text-success hidden">Saved.</p>
+          <div><label class="field-label">Late Grace Period (Minutes)</label><input id="set-grace" type="number" class="field" /></div>
+          <button id="save-settings" class="btn-primary">Save Settings</button>
+          <p id="settings-saved" class="text-sm text-success hidden">Saved</p>
         </div>
         <div class="card p-5 space-y-4">
           <div class="card-header !p-0 !border-0 mb-1">Shifts</div>
-          <p class="text-sm text-muted -mt-2">Buat shift kalau karyawan tidak semua masuk di jam yang sama (misal Pagi/Sore/Malam). Karyawan tanpa shift memakai jam kerja default di atas.</p>
+          <p class="text-sm text-muted -mt-2">For Shifts, If Employees Don't All Come In At The Same Time (Morning/Afternoon/Night), Employees Without Shifts Will Use The Default Working Hours Above.</p>
           <div id="shifts-list" class="space-y-2"></div>
           <div class="border-t border-line pt-3 space-y-2">
             <div class="grid grid-cols-2 gap-3">
-              <div class="col-span-2"><label class="field-label">Nama shift</label><input id="shift-name" class="field" placeholder="Pagi" /></div>
-              <div><label class="field-label">Jam mulai</label><input id="shift-start" type="time" class="field" /></div>
-              <div><label class="field-label">Jam selesai</label><input id="shift-end" type="time" class="field" /></div>
+              <div class="col-span-2"><label class="field-label">Shift Name</label><input id="shift-name" class="field" placeholder="Pagi" /></div>
+              <div><label class="field-label">Start Time</label><input id="shift-start" type="time" class="field" /></div>
+              <div><label class="field-label">End Time</label><input id="shift-end" type="time" class="field" /></div>
             </div>
-            <div><label class="field-label">Toleransi telat (menit)</label><input id="shift-grace" type="number" class="field" value="10" /></div>
-            <button id="add-shift-btn" class="btn-secondary w-full">Tambah shift</button>
+            <div><label class="field-label">Late Tolerance (Minutes)</label><input id="shift-grace" type="number" class="field" value="10" /></div>
+            <button id="add-shift-btn" class="btn-secondary w-full">Add Shift</button>
           </div>
         </div>
         <div class="card p-5 space-y-4">
-          <div class="card-header !p-0 !border-0 mb-1">Hari libur</div>
-          <p class="text-sm text-muted -mt-2">Tanggal di bawah ini nggak akan otomatis ditandai "Absent" walau karyawan tidak check-in.</p>
+          <div class="card-header !p-0 !border-0 mb-1">Holiday</div>
+          <p class="text-sm text-muted -mt-2">The Dates Below Will Not Be Automatically Marked As "Absent" Even If The Employee Does Not Check-In.</p>
           <div id="holidays-list" class="space-y-2"></div>
-          <button id="import-holidays-btn" class="btn-secondary w-full">Impor hari libur nasional tahun ini</button>
+          <button id="import-holidays-btn" class="btn-secondary w-full">Import National Holidays This Year</button>
           <div class="border-t border-line pt-3 space-y-2">
             <div class="grid grid-cols-2 gap-3">
-              <div><label class="field-label">Tanggal</label><input id="holiday-date" type="date" class="field" /></div>
-              <div><label class="field-label">Nama libur</label><input id="holiday-name" class="field" placeholder="Idul Fitri" /></div>
+              <div><label class="field-label">Date</label><input id="holiday-date" type="date" class="field" /></div>
+              <div><label class="field-label">Holiday Name</label><input id="holiday-name" class="field" placeholder="Idul Fitri" /></div>
             </div>
-            <button id="add-holiday-btn" class="btn-secondary w-full">Tambah hari libur</button>
+            <button id="add-holiday-btn" class="btn-secondary w-full">Add Holidays</button>
           </div>
         </div>
       </section>
@@ -327,13 +327,13 @@
       <!-- BILLING -->
       <section id="view-billing" class="view hidden max-w-xl space-y-4">
         <div class="card p-5 space-y-3">
-          <div class="card-header !p-0 !border-0 mb-1">Status langganan</div>
-          <p id="billing-status-text" class="text-sm">Memuat...</p>
-          <button id="billing-pay-btn" class="btn-primary">Bayar sekarang</button>
+          <div class="card-header !p-0 !border-0 mb-1">Subscription Status</div>
+          <p id="billing-status-text" class="text-sm">Loading....</p>
+          <button id="billing-pay-btn" class="btn-primary">Pay Now</button>
         </div>
         <div class="card p-5">
-          <div class="card-header !p-0 !border-0 mb-3">Riwayat pembayaran</div>
-          <p class="text-sm text-muted">Riwayat lengkap bisa dicek lewat konfirmasi email/notifikasi Midtrans kamu.</p>
+          <div class="card-header !p-0 !border-0 mb-3">Payment History</div>
+          <p class="text-sm text-muted">Complete History Can Be Viewed Via Your Email Confirmation/Midrans Notification</p>
         </div>
       </section>
 
@@ -345,12 +345,12 @@
 <div id="paywall-screen" class="hidden min-h-screen flex items-center justify-center px-4">
   <div class="w-full max-w-sm text-center">
     <div class="punch-badge mx-auto mb-4">L</div>
-    <h2 class="font-display text-xl font-bold mb-2">Masa trial sudah berakhir</h2>
-    <p id="paywall-message" class="text-sm text-muted mb-6">Perpanjang langganan untuk terus memakai Ledger.</p>
+    <h2 class="font-display text-xl font-bold mb-2">Trial Period Has Ended</h2>
+    <p id="paywall-message" class="text-sm text-muted mb-6">Renew Your Subscription To Continue Using Ledger</p>
     <div class="card p-5 space-y-3">
       <p id="paywall-price" class="font-mono text-2xl font-bold"></p>
-      <button id="paywall-pay-btn" class="btn-primary w-full">Bayar sekarang</button>
-      <button id="paywall-logout-btn" class="btn-ghost w-full">Sign out</button>
+      <button id="paywall-pay-btn" class="btn-primary w-full">Pay Now</button>
+      <button id="paywall-logout-btn" class="btn-ghost w-full">Sign Out</button>
     </div>
   </div>
 </div>
@@ -358,10 +358,10 @@
 <!-- Employee modal -->
 <div id="employee-modal" class="modal-overlay hidden">
   <div class="modal-card">
-    <h3 class="font-display font-semibold text-lg mb-4" id="employee-modal-title">Add employee</h3>
+    <h3 class="font-display font-semibold text-lg mb-4" id="employee-modal-title">Add Employee</h3>
     <form id="employee-form" class="space-y-3">
       <input type="hidden" id="emp-id" />
-      <div><label class="field-label">Full name</label><input required id="emp-name" class="field" /></div>
+      <div><label class="field-label">Full Name</label><input required id="emp-name" class="field" /></div>
       <div><label class="field-label">Email</label><input required type="email" id="emp-email" class="field" /></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="field-label">Department</label><input id="emp-department" class="field" /></div>
@@ -369,14 +369,14 @@
       </div>
       <div><label class="field-label">Phone</label><input id="emp-phone" class="field" /></div>
       <div><label class="field-label">Shift</label>
-        <select id="emp-shift" class="field"><option value="">Jam kerja default (tanpa shift)</option></select>
+        <select id="emp-shift" class="field"><option value="">Default Working Hours (No Shift)</option></select>
       </div>
       <div id="emp-status-wrap" class="hidden">
         <label class="field-label">Status</label>
         <select id="emp-status" class="field"><option value="active">Active</option><option value="inactive">Inactive</option></select>
       </div>
       <div id="emp-login-wrap" class="border-t border-line pt-3">
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="emp-create-login" /> Create a login for this employee</label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="emp-create-login" /> Create A Login For This Employee</label>
         <input type="password" id="emp-password" class="field mt-2 hidden" placeholder="Temporary password" />
       </div>
       <div class="flex gap-2 pt-2">
