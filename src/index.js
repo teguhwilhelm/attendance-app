@@ -754,11 +754,13 @@ app.get("/api/reports/summary", async (c) => {
 // ---------- export ----------
 
 function fmtTimeWIB(iso) {
+function fmtTimeWIB(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleTimeString("id-ID", {
     timeZone: "Asia/Jakarta",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
 }
 
@@ -767,7 +769,7 @@ async function fetchRangeRows(c) {
   const start = c.req.query("start") || todayStr(new Date(Date.now() - 30 * 86400000));
   const end = c.req.query("end") || todayStr();
   const { results } = await c.env.DB.prepare(
-    `SELECT e.full_name, e.department, a.work_date, a.check_in_time, a.check_out_time, a.status,
+    `SELECT e.full_name, e.position, a.work_date, a.check_in_time, a.check_out_time, a.status,
             a.check_in_verified, a.check_out_verified, a.notes
      FROM attendance a JOIN employees e ON e.id = a.employee_id
      WHERE a.company_id = ? AND a.work_date BETWEEN ? AND ?
@@ -782,13 +784,13 @@ app.get("/api/export/csv", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
   const rows = await fetchRangeRows(c);
-  const header = ["Employee", "Department", "Date", "Check In", "Check Out", "Status", "In Verified", "Out Verified", "Notes"];
+  const header = ["Employee", "Position", "Date", "Check In", "Check Out", "Status", "In Verified", "Out Verified", "Notes"];
   const lines = [header.join(",")];
   for (const r of rows) {
     lines.push(
       [
         r.full_name,
-        r.department || "",
+        r.position || "",
         r.work_date,
         fmtTimeWIB(r.check_in_time),
         fmtTimeWIB(r.check_out_time),
@@ -815,7 +817,7 @@ app.get("/api/export/xlsx", async (c) => {
   const rows = await fetchRangeRows(c);
   const data = rows.map((r) => ({
     Employee: r.full_name,
-    Department: r.department || "",
+    Position: r.position || "",
     Date: r.work_date,
     "Check In": fmtTimeWIB(r.check_in_time),
     "Check Out": fmtTimeWIB(r.check_out_time),
@@ -835,7 +837,7 @@ app.get("/api/export/xlsx", async (c) => {
     },
   });
 });
-
+  
 // PDF is generated client-side (printable view -> browser "Save as PDF"),
 // so this just returns the same JSON the print view renders from.
 app.get("/api/export/report-data", async (c) => {
