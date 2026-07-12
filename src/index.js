@@ -753,6 +753,15 @@ app.get("/api/reports/summary", async (c) => {
 
 // ---------- export ----------
 
+function fmtTimeWIB(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 async function fetchRangeRows(c) {
   const user = requireAuth(c);
   const start = c.req.query("start") || todayStr(new Date(Date.now() - 30 * 86400000));
@@ -781,8 +790,8 @@ app.get("/api/export/csv", async (c) => {
         r.full_name,
         r.department || "",
         r.work_date,
-        r.check_in_time || "",
-        r.check_out_time || "",
+        fmtTimeWIB(r.check_in_time),
+        fmtTimeWIB(r.check_out_time),
         r.status,
         r.check_in_verified ? "yes" : "no",
         r.check_out_verified ? "yes" : "no",
@@ -808,8 +817,8 @@ app.get("/api/export/xlsx", async (c) => {
     Employee: r.full_name,
     Department: r.department || "",
     Date: r.work_date,
-    "Check In": r.check_in_time || "",
-    "Check Out": r.check_out_time || "",
+    "Check In": fmtTimeWIB(r.check_in_time),
+    "Check Out": fmtTimeWIB(r.check_out_time),
     Status: r.status,
     "In Verified": r.check_in_verified ? "yes" : "no",
     "Out Verified": r.check_out_verified ? "yes" : "no",
