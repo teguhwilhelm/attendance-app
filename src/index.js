@@ -754,7 +754,6 @@ app.get("/api/reports/summary", async (c) => {
 // ---------- export ----------
 
 function fmtTimeWIB(iso) {
-function fmtTimeWIB(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleTimeString("id-ID", {
     timeZone: "Asia/Jakarta",
