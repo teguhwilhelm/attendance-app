@@ -252,8 +252,8 @@ function showPaywall(billing) {
   document.getElementById("paywall-screen").classList.remove("hidden");
   document.getElementById("paywall-message").textContent =
     billing.plan_status === "trial"
-      ? "Masa trial gratis 14 hari kamu sudah habis."
-      : "Langganan bulanan kamu sudah berakhir.";
+      ? "Your 14-Day Free Trail Period Has Expired"
+      : "Your Monthly Subscription Has Expired ";
   document.getElementById("paywall-price").textContent = formatIDR(billing.monthly_price) + " / bulan";
 }
 
@@ -267,9 +267,9 @@ async function startCheckout() {
     script.src = res.is_production ? "https://app.midtrans.com/snap/snap.js" : "https://app.sandbox.midtrans.com/snap/snap.js";
     script.onload = () => {
       window.snap.pay(res.token, {
-        onSuccess: () => { toast("Pembayaran berhasil!"); boot(); },
-        onPending: () => toast("Pembayaran diproses, mohon tunggu konfirmasi."),
-        onError: () => toast("Pembayaran gagal, coba lagi."),
+        onSuccess: () => { toast("Payment Successful!"); boot(); },
+        onPending: () => toast("Payment Processed, Please Wait for Confirmation "),
+        onError: () => toast("Payment Failed, Please Try Again"),
         onClose: () => {},
       });
     };
@@ -288,11 +288,11 @@ async function loadBilling() {
   const billing = await api("/api/billing/status");
   const el = document.getElementById("billing-status-text");
   if (billing.plan_status === "trial") {
-    el.innerHTML = `Kamu sedang masa trial gratis — <b>${billing.trial_days_left} hari lagi</b>. Setelah itu, langganan bulanan ${formatIDR(billing.monthly_price)}.`;
+    el.innerHTML = `You're In The Free Trail Period  — <b>${billing.trial_days_left} Another Day </b>. After That, Monthly Subscription ${formatIDR(billing.monthly_price)}.`;
   } else if (billing.is_active) {
-    el.innerHTML = `Langganan aktif sampai <b>${new Date(billing.subscription_expires_at).toLocaleDateString("id-ID")}</b>.`;
+    el.innerHTML = `Active Subscription Until <b>${new Date(billing.subscription_expires_at).toLocaleDateString("id-ID")}</b>.`;
   } else {
-    el.innerHTML = `Langganan sudah berakhir. Bayar ${formatIDR(billing.monthly_price)} untuk mengaktifkan lagi.`;
+    el.innerHTML = `Subscription Has Expired. Please Pay ${formatIDR(billing.monthly_price)} To Reactivate`;
   }
 }
 
@@ -342,8 +342,8 @@ async function loadDashboard() {
       <td>${fmtTime(r.check_in_time)}</td>
       <td>${fmtTime(r.check_out_time)}</td>
       <td>${badge(r.status)}</td>
-      <td class="font-sans text-xs">${r.check_in_time ? (r.check_in_verified ? "✅ On site" : "⚠️ Unverified") : "—"}</td>
-    </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans">No attendance recorded yet today.</td></tr>`;
+      <td class="font-sans text-xs">${r.check_in_time ? (r.check_in_verified ? "✅ On Site" : "⚠️ Unverified") : "—"}</td>
+    </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans">No Attendance Recorded Yet Today.</td></tr>`;
 }
 
 // ---------- shifts ----------
@@ -352,7 +352,7 @@ async function loadShiftsQuiet() {
   try { state.shifts = await api("/api/shifts"); } catch { state.shifts = []; }
   const sel = document.getElementById("emp-shift");
   const current = sel.value;
-  sel.innerHTML = `<option value="">Jam kerja default (tanpa shift)</option>` +
+  sel.innerHTML = `<option value="">Default Working Hours (No Shifts)</option>` +
     state.shifts.map((s) => `<option value="${s.id}">${s.name} (${s.start_time}–${s.end_time})</option>`).join("");
   sel.value = current;
 }
@@ -366,14 +366,14 @@ async function loadShiftsSettings() {
         <span class="text-muted font-mono ml-2">${s.start_time}–${s.end_time}</span>
         <span class="text-muted text-xs ml-2">toleransi ${s.late_grace_minutes}m</span>
       </div>
-      <button class="text-danger underline text-xs" onclick="deleteShift(${s.id})">Hapus</button>
+      <button class="text-danger underline text-xs" onclick="deleteShift(${s.id})">Delete</button>
     </div>`).join("") || `<p class="text-sm text-muted">Belum ada shift dibuat.</p>`;
 }
 
 window.deleteShift = async (id) => {
-  if (!confirm("Hapus shift ini? Karyawan yang memakainya akan kembali ke jam kerja default.")) return;
+  if (!confirm("Eliminate This Shift? Employees Who Use It Will Revert to Default Work Hours")) return;
   await api(`/api/shifts/${id}`, { method: "DELETE" });
-  toast("Shift dihapus");
+  toast("Shift Deleted");
   loadShiftsSettings();
 };
 
