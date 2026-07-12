@@ -117,7 +117,7 @@ document.getElementById("logout-btn").onclick = async () => {
 // ---------- forgot / reset password ----------
 
 document.getElementById("show-forgot").onclick = () => {
-  alert("Untuk reset password, hubungi admin perusahaan kamu. Admin bisa reset password kamu langsung dari halaman Employees.");
+  alert("Please Contact Your Company Admin");
 };
 document.getElementById("back-to-login").onclick = () => {
   document.getElementById("forgot-form").classList.add("hidden");
@@ -130,7 +130,7 @@ document.getElementById("forgot-form").onsubmit = async (e) => {
   const msgEl = document.getElementById("forgot-message");
   try {
     await api("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
-    msgEl.textContent = "Kalau email itu terdaftar, link reset password sudah dikirim. Cek inbox/spam kamu.";
+    msgEl.textContent = "Please Check Your Email.";
     msgEl.classList.remove("hidden", "text-danger");
     msgEl.classList.add("text-success");
   } catch (err) {
@@ -147,7 +147,7 @@ document.getElementById("reset-password-form").onsubmit = async (e) => {
   const errEl = document.getElementById("reset-password-error");
   try {
     await api("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) });
-    toast("Password berhasil diubah, silakan sign in.");
+    toast("Password Changed Successfully, Please Sign In");
     location.href = location.origin;
   } catch (err) {
     errEl.textContent = err.message;
