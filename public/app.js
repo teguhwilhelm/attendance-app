@@ -731,8 +731,9 @@ async function loadLeave() {
     const badgeClass = r.status === "approved" ? "badge-present" : r.status === "rejected" ? "badge-absent" : "badge-late";
     const label = r.status === "approved" ? "Disetujui" : r.status === "rejected" ? "Ditolak" : "Menunggu";
     const actions = (isAdmin && r.status === "pending")
-      ? `<button class="text-success underline mr-2" onclick="reviewLeave(${r.id}, 'approve')">Setujui</button><button class="text-danger underline" onclick="reviewLeave(${r.id}, 'reject')">Tolak</button>`
+      ? `<button class="text-success underline mr-2" onclick="reviewLeave(${r.id}, 'approve')">Setujui</button><button class="text-danger underline mr-2" onclick="reviewLeave(${r.id}, 'reject')">Tolak</button>`
       : "";
+    const deleteBtn = isAdmin ? `<button class="text-danger underline" onclick="deleteLeaveRequest(${r.id})">Hapus</button>` : "";
     return `
     <tr>
       <td class="font-sans">${r.full_name}</td>
@@ -740,10 +741,19 @@ async function loadLeave() {
       <td>${r.end_date}</td>
       <td class="font-sans">${r.reason || "—"}</td>
       <td><span class="badge ${badgeClass}">${label}</span></td>
-      <td class="font-sans text-xs whitespace-nowrap">${actions}</td>
+      <td class="font-sans text-xs whitespace-nowrap">${actions}${deleteBtn}</td>
     </tr>`;
   }).join("") || `<tr><td colspan="6" class="text-muted font-sans p-4">Belum ada pengajuan cuti.</td></tr>`;
 }
+
+window.deleteLeaveRequest = async (id) => {
+  if (!confirm("Hapus pengajuan cuti ini dari riwayat? Tindakan ini tidak bisa dibatalkan.")) return;
+  try {
+    await api(`/api/leave-requests/${id}`, { method: "DELETE" });
+    toast("Pengajuan cuti dihapus");
+    loadLeave();
+  } catch (err) { toast(err.message); }
+};
 
 document.getElementById("submit-leave-btn").onclick = async () => {
   const body = {
