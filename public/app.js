@@ -644,9 +644,6 @@ async function pollNotifDot() {
 
 async function loadSettings() {
   const c = await api("/api/company");
-  document.getElementById("set-lat").value = c.office_lat ?? "";
-  document.getElementById("set-lng").value = c.office_lng ?? "";
-  document.getElementById("set-radius").value = c.geofence_radius_m ?? 200;
   document.getElementById("set-start").value = c.work_start_time ?? "09:00";
   document.getElementById("set-end").value = c.work_end_time ?? "17:00";
   document.getElementById("set-grace").value = c.late_grace_minutes ?? 10;
@@ -746,17 +743,9 @@ document.getElementById("add-location-btn").onclick = async () => {
   } catch (err) { toast(err.message); }
 };
 
-document.getElementById("set-use-location").onclick = async () => {
-  const loc = await getLocation();
-  if (loc.lat) { document.getElementById("set-lat").value = loc.lat; document.getElementById("set-lng").value = loc.lng; }
-  else toast("Couldn't read your location — check browser permissions.");
-};
 document.getElementById("save-settings").onclick = async (e) => {
   e.preventDefault();
   const body = {
-    office_lat: parseFloat(document.getElementById("set-lat").value) || null,
-    office_lng: parseFloat(document.getElementById("set-lng").value) || null,
-    geofence_radius_m: parseInt(document.getElementById("set-radius").value) || 200,
     work_start_time: document.getElementById("set-start").value,
     work_end_time: document.getElementById("set-end").value,
     late_grace_minutes: parseInt(document.getElementById("set-grace").value) || 0,
