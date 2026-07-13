@@ -113,6 +113,7 @@
       <button data-view="reports" class="nav-item">Reports</button>
       <button data-view="notifications" class="nav-item">Notifications <span id="notif-dot" class="hidden ml-1 inline-block w-1.5 h-1.5 rounded-full bg-warning"></span></button>
       <button data-view="leave" class="nav-item">Leave</button>
+      <button data-view="shifts" class="nav-item admin-only">Shifts</button>
       <button data-view="settings" class="nav-item admin-only">Settings</button>
       <button data-view="billing" class="nav-item admin-only">Billing</button>
     </nav>
@@ -273,18 +274,8 @@
         </div>
       </section>
 
-      <!-- SETTINGS -->
-      <section id="view-settings" class="view hidden space-y-4 max-w-xl">
-        <div class="card p-5 space-y-4">
-          <div class="card-header !p-0 !border-0 mb-1">Work Hours</div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="field-label">Start Time</label><input id="set-start" type="time" class="field" /></div>
-            <div><label class="field-label">End Time</label><input id="set-end" type="time" class="field" /></div>
-          </div>
-          <div><label class="field-label">Late Grace Period (Minutes)</label><input id="set-grace" type="number" class="field" /></div>
-          <button id="save-settings" class="btn-primary">Save Settings</button>
-          <p id="settings-saved" class="text-sm text-success hidden">Saved</p>
-        </div>
+      <!-- SHIFTS -->
+      <section id="view-shifts" class="view hidden max-w-xl space-y-4">
         <div class="card p-5 space-y-4">
           <div class="card-header !p-0 !border-0 mb-1">Shifts</div>
           <div id="shifts-list" class="space-y-2"></div>
@@ -297,6 +288,20 @@
             <div><label class="field-label">Late Tolerance (Minutes)</label><input id="shift-grace" type="number" class="field" value="10" /></div>
             <button id="add-shift-btn" class="btn-secondary w-full">Add Shift</button>
           </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="view hidden space-y-4 max-w-xl">
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Work Hours</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="field-label">Start Time</label><input id="set-start" type="time" class="field" /></div>
+            <div><label class="field-label">End Time</label><input id="set-end" type="time" class="field" /></div>
+          </div>
+          <div><label class="field-label">Late Grace Period (Minutes)</label><input id="set-grace" type="number" class="field" /></div>
+          <button id="save-settings" class="btn-primary">Save Settings</button>
+          <p id="settings-saved" class="text-sm text-success hidden">Saved</p>
         </div>
         <div class="card p-5 space-y-4">
           <div class="card-header !p-0 !border-0 mb-1">Holiday</div>
