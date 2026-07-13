@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS shifts (
   created_at         TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS locations (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id  INTEGER NOT NULL REFERENCES companies(id),
+  name        TEXT NOT NULL,
+  lat         REAL NOT NULL,
+  lng         REAL NOT NULL,
+  radius_m    INTEGER DEFAULT 200,
+  created_at  TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS holidays (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   company_id  INTEGER NOT NULL REFERENCES companies(id),
@@ -121,5 +131,6 @@ CREATE INDEX IF NOT EXISTS idx_employees_company         ON employees(company_id
 CREATE INDEX IF NOT EXISTS idx_users_company             ON users(company_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_company     ON notifications(company_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_shifts_company             ON shifts(company_id);
+CREATE INDEX IF NOT EXISTS idx_locations_company ON locations(company_id);
 CREATE INDEX IF NOT EXISTS idx_holidays_company ON holidays(company_id, date);
 CREATE INDEX IF NOT EXISTS idx_leave_requests_company ON leave_requests(company_id);
