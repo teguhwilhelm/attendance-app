@@ -39,6 +39,26 @@ function todayStr(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+async function checkGeofence(db, companyId, lat, lng) {
+  if (lat == null || lng == null) return { verified: false, locationName: null };
+  const company = await db
+    .prepare("SELECT office_lat, office_lng, geofence_radius_m FROM companies WHERE id = ?")
+    .bind(companyId)
+    .first();
+  const { results: locations } = await db.prepare("SELECT * FROM locations WHERE company_id = ?").bind(companyId).all();
+  const candidates = [...locations];
+  if (company?.office_lat != null && company?.office_lng != null) {
+    candidates.push({ name: "Kantor", lat: company.office_lat, lng: company.office_lng, radius_m: company.geofence_radius_m ?? 200 });
+  }
+  for (const loc of candidates) {
+    const dist = distanceMeters(loc.lat, loc.lng, lat, lng);
+    if (dist !== null && dist <= (loc.radius_m ?? 200)) {
+      return { verified: true, locationName: loc.name };
+    }
+  }
+  return { verified: false, locationName: null };
+}
+
 function dateRange(start, end) {
   const dates = [];
   let d = new Date(start + "T00:00:00");
@@ -263,6 +283,50 @@ app.delete("/api/shifts/:id", async (c) => {
     .bind(id, user.company_id)
     .run();
   await c.env.DB.prepare("DELETE FROM shifts WHERE id = ? AND company_id = ?").bind(id, user.company_id).run();
+  return c.json({ ok: true });
+});
+
+app.get("/api/locations", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  const { results } = await c.env.DB.prepare("SELECT * FROM locations WHERE company_id = ? ORDER BY name")
+    .bind(user.company_id)
+    .all();
+  return c.json(results);
+});
+
+app.post("/api/locations", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const b = await c.req.json();
+  if (!b.name || b.lat == null || b.lng == null) {
+    return c.json({ error: "name, lat and lng are required" }, 400);
+  }
+  const row = await c.env.DB.prepare(
+    "INSERT INTO locations (company_id, name, lat, lng, radius_m) VALUES (?, ?, ?, ?, ?) RETURNING *"
+  )
+    .bind(user.company_id, b.name, b.lat, b.lng, b.radius_m ?? 200)
+    .first();
+  return c.json(row);
+});
+
+app.put("/api/locations/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  const b = await c.req.json();
+  await c.env.DB.prepare("UPDATE locations SET name = ?, lat = ?, lng = ?, radius_m = ? WHERE id = ? AND company_id = ?")
+    .bind(b.name, b.lat, b.lng, b.radius_m ?? 200, id, user.company_id)
+    .run();
+  const row = await c.env.DB.prepare("SELECT * FROM locations WHERE id = ? AND company_id = ?").bind(id, user.company_id).first();
+  return c.json(row);
+});
+
+app.delete("/api/locations/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const id = c.req.param("id");
+  await c.env.DB.prepare("DELETE FROM locations WHERE id = ? AND company_id = ?").bind(id, user.company_id).run();
   return c.json({ ok: true });
 });
 
@@ -574,8 +638,7 @@ app.post("/api/attendance/checkin", async (c) => {
     return c.json({ error: "Already checked in today" }, 409);
   }
 
-  const dist = distanceMeters(company.office_lat, company.office_lng, b.lat, b.lng);
-  const verified = dist !== null ? dist <= (company.geofence_radius_m ?? 200) : 0;
+  const { verified } = await checkGeofence(db, user.company_id, b.lat, b.lng);
 
   const startTime = shift ? shift.start_time : (company.work_start_time || "09:00");
   const graceMinutes = shift ? shift.late_grace_minutes : (company.late_grace_minutes || 0);
@@ -630,8 +693,7 @@ app.post("/api/attendance/checkout", async (c) => {
   if (!existing || !existing.check_in_time) return c.json({ error: "You haven't checked in today" }, 400);
   if (existing.check_out_time) return c.json({ error: "Already checked out today" }, 409);
 
-  const dist = distanceMeters(company.office_lat, company.office_lng, b.lat, b.lng);
-  const verified = dist !== null ? dist <= (company.geofence_radius_m ?? 200) : 0;
+  const { verified } = await checkGeofence(db, user.company_id, b.lat, b.lng);
 
   await db
     .prepare(
