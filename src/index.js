@@ -41,16 +41,8 @@ function todayStr(d = new Date()) {
 
 async function checkGeofence(db, companyId, lat, lng) {
   if (lat == null || lng == null) return { verified: false, locationName: null };
-  const company = await db
-    .prepare("SELECT office_lat, office_lng, geofence_radius_m FROM companies WHERE id = ?")
-    .bind(companyId)
-    .first();
   const { results: locations } = await db.prepare("SELECT * FROM locations WHERE company_id = ?").bind(companyId).all();
-  const candidates = [...locations];
-  if (company?.office_lat != null && company?.office_lng != null) {
-    candidates.push({ name: "Kantor", lat: company.office_lat, lng: company.office_lng, radius_m: company.geofence_radius_m ?? 200 });
-  }
-  for (const loc of candidates) {
+  for (const loc of locations) {
     const dist = distanceMeters(loc.lat, loc.lng, lat, lng);
     if (dist !== null && dist <= (loc.radius_m ?? 200)) {
       return { verified: true, locationName: loc.name };
@@ -215,18 +207,9 @@ app.put("/api/company", async (c) => {
   if (!user) return c.json({ error: "Admin access required" }, 403);
   const b = await c.req.json();
   await c.env.DB.prepare(
-    `UPDATE companies SET office_lat = ?, office_lng = ?, geofence_radius_m = ?,
-     work_start_time = ?, work_end_time = ?, late_grace_minutes = ? WHERE id = ?`
+    `UPDATE companies SET work_start_time = ?, work_end_time = ?, late_grace_minutes = ? WHERE id = ?`
   )
-    .bind(
-      b.office_lat ?? null,
-      b.office_lng ?? null,
-      b.geofence_radius_m ?? 200,
-      b.work_start_time ?? "09:00",
-      b.work_end_time ?? "17:00",
-      b.late_grace_minutes ?? 10,
-      user.company_id
-    )
+    .bind(b.work_start_time ?? "09:00", b.work_end_time ?? "17:00", b.late_grace_minutes ?? 10, user.company_id)
     .run();
   return c.json({ ok: true });
 });
