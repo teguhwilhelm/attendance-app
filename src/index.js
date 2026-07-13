@@ -896,13 +896,13 @@ app.get("/api/export/report-data", async (c) => {
 app.get("/api/notifications", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
-  let query = "SELECT * FROM notifications WHERE company_id = ?";
+  let query = `SELECT n.*, e.full_name FROM notifications n LEFT JOIN employees e ON e.id = n.employee_id WHERE n.company_id = ?`;
   const args = [user.company_id];
   if (user.role !== "admin") {
-    query += " AND employee_id = ?";
+    query += " AND n.employee_id = ?";
     args.push(user.employee_id);
   }
-  query += " ORDER BY created_at DESC LIMIT 50";
+  query += " ORDER BY n.created_at DESC LIMIT 50";
   const { results } = await c.env.DB.prepare(query).bind(...args).all();
   return c.json(results);
 });
@@ -913,6 +913,20 @@ app.post("/api/notifications/:id/read", async (c) => {
   await c.env.DB.prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND company_id = ?")
     .bind(c.req.param("id"), user.company_id)
     .run();
+  return c.json({ ok: true });
+});
+
+app.delete("/api/notifications/:id", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  const id = c.req.param("id");
+  let query = "DELETE FROM notifications WHERE id = ? AND company_id = ?";
+  const args = [id, user.company_id];
+  if (user.role !== "admin") {
+    query += " AND employee_id = ?";
+    args.push(user.employee_id);
+  }
+  await c.env.DB.prepare(query).bind(...args).run();
   return c.json({ ok: true });
 });
 
