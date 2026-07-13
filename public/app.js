@@ -652,6 +652,7 @@ async function loadSettings() {
   document.getElementById("set-grace").value = c.late_grace_minutes ?? 10;
   await loadShiftsSettings();
   await loadHolidays();
+  await loadLocations();
 }
 
 // ---------- holidays ----------
@@ -697,6 +698,51 @@ document.getElementById("import-holidays-btn").onclick = async () => {
     const res = await api("/api/holidays/import", { method: "POST", body: JSON.stringify({ year }) });
     toast(`Berhasil impor ${res.imported} hari libur baru (dari ${res.total} total tahun ${year}).`);
     loadHolidays();
+  } catch (err) { toast(err.message); }
+};
+
+async function loadLocations() {
+  const locations = await api("/api/locations");
+  document.getElementById("locations-list").innerHTML = locations.map((l) => `
+    <div class="flex items-center justify-between border border-line rounded-lg px-3 py-2 text-sm">
+      <div>
+        <span class="font-medium">${l.name}</span>
+        <span class="text-muted font-mono text-xs ml-2">${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}</span>
+        <span class="text-muted text-xs ml-2">radius ${l.radius_m}m</span>
+      </div>
+      <button class="text-danger underline text-xs" onclick="deleteLocation(${l.id})">Hapus</button>
+    </div>`).join("") || `<p class="text-sm text-muted">Belum ada cabang ditambahkan.</p>`;
+}
+
+window.deleteLocation = async (id) => {
+  if (!confirm("Hapus cabang ini?")) return;
+  await api(`/api/locations/${id}`, { method: "DELETE" });
+  toast("Cabang dihapus");
+  loadLocations();
+};
+
+document.getElementById("location-use-current").onclick = async () => {
+  const loc = await getLocation();
+  if (loc.lat) { document.getElementById("location-lat").value = loc.lat; document.getElementById("location-lng").value = loc.lng; }
+  else toast("Couldn't read your location — check browser permissions.");
+};
+
+document.getElementById("add-location-btn").onclick = async () => {
+  const body = {
+    name: document.getElementById("location-name").value,
+    lat: parseFloat(document.getElementById("location-lat").value),
+    lng: parseFloat(document.getElementById("location-lng").value),
+    radius_m: parseInt(document.getElementById("location-radius").value) || 200,
+  };
+  if (!body.name || isNaN(body.lat) || isNaN(body.lng)) { toast("Isi nama, latitude, dan longitude dulu"); return; }
+  try {
+    await api("/api/locations", { method: "POST", body: JSON.stringify(body) });
+    document.getElementById("location-name").value = "";
+    document.getElementById("location-lat").value = "";
+    document.getElementById("location-lng").value = "";
+    document.getElementById("location-radius").value = "200";
+    toast("Cabang ditambahkan");
+    loadLocations();
   } catch (err) { toast(err.message); }
 };
 
