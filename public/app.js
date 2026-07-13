@@ -189,7 +189,7 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
   document.getElementById("view-title").textContent = {
     dashboard: "Dashboard", attendance: "Attendance", employees: "Employees",
-    reports: "Reports & analytics", notifications: "Notifications", settings: "Settings", billing: "Billing", leave: "Leave",
+    reports: "Reports & Analytics", notifications: "Notifications", settings: "Settings", billing: "Billing", leave: "Leave", shifts: "Shifts",
   }[name];
   if (name === "employees") loadEmployees();
   if (name === "attendance") loadAttendance();
@@ -198,6 +198,7 @@ function showView(name) {
   if (name === "settings") loadSettings();
   if (name === "billing") loadBilling();
   if (name === "leave") loadLeave();
+  if (name === "shifts") loadShiftsSettings();
 }
 
 // ---------- boot ----------
@@ -620,18 +621,28 @@ document.getElementById("export-pdf").onclick = async () => {
 
 async function loadNotifications() {
   const items = await api("/api/notifications");
+  const isAdmin = state.me?.user?.role === "admin";
   document.getElementById("notif-dot").classList.toggle("hidden", !items.some((n) => !n.is_read));
   document.getElementById("notifications-list").innerHTML = items.map((n) => `
     <div class="p-4 flex items-start justify-between gap-3 ${n.is_read ? "" : "bg-blue-50/40"}">
       <div>
         <span class="badge badge-${n.type === "late" ? "late" : n.type === "absent" ? "absent" : "half_day"}">${n.type}</span>
+        ${isAdmin && n.full_name ? `<span class="text-sm font-medium ml-2">${n.full_name}</span>` : ""}
         <p class="text-sm mt-1">${n.message}</p>
         <p class="text-xs text-muted mt-0.5">${new Date(n.created_at).toLocaleString()}</p>
       </div>
-      ${n.is_read ? "" : `<button class="btn-ghost text-xs" onclick="markRead(${n.id})">Mark read</button>`}
-    </div>`).join("") || `<div class="p-6 text-muted text-sm">No notifications yet.</div>`;
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        ${n.is_read ? "" : `<button class="btn-ghost text-xs" onclick="markRead(${n.id})">Mark Read</button>`}
+        <button class="text-danger underline text-xs" onclick="deleteNotification(${n.id})">Delete</button>
+      </div>
+    </div>`).join("") || `<div class="p-6 text-muted text-sm">No Notifications Yet</div>`;
 }
 window.markRead = async (id) => { await api(`/api/notifications/${id}/read`, { method: "POST" }); loadNotifications(); };
+window.deleteNotification = async (id) => {
+  if (!confirm("Delete This Notification?")) return;
+  await api(`/api/notifications/${id}`, { method: "DELETE" });
+  loadNotifications();
+};
 async function pollNotifDot() {
   try {
     const items = await api("/api/notifications");
@@ -644,10 +655,9 @@ async function pollNotifDot() {
 
 async function loadSettings() {
   const c = await api("/api/company");
-  document.getElementById("set-start").value = c.work_start_time ?? "09:00";
-  document.getElementById("set-end").value = c.work_end_time ?? "17:00";
+  document.getElementById("set-start").value = c.work_start_time ?? "08:00";
+  document.getElementById("set-end").value = c.work_end_time ?? "16:00";
   document.getElementById("set-grace").value = c.late_grace_minutes ?? 10;
-  await loadShiftsSettings();
   await loadHolidays();
   await loadLocations();
 }
