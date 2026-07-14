@@ -362,6 +362,40 @@
   </div>
 </div>
 
+  <!-- Custom confirm dialog (replaces native confirm()) -->
+<div id="confirm-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 id="confirm-modal-title" class="font-display font-semibold text-lg mb-2">Konfirmasi</h3>
+    <p id="confirm-modal-message" class="text-sm text-muted mb-5"></p>
+    <div class="flex gap-2">
+      <button type="button" id="confirm-modal-cancel" class="btn-ghost flex-1">Batal</button>
+      <button type="button" id="confirm-modal-confirm" class="btn-primary flex-1">Ya</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom alert dialog (replaces native alert()) -->
+<div id="alert-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 id="alert-modal-title" class="font-display font-semibold text-lg mb-2">Info</h3>
+    <p id="alert-modal-message" class="text-sm text-muted mb-5"></p>
+    <button type="button" id="alert-modal-ok" class="btn-primary w-full">Oke</button>
+  </div>
+</div>
+
+<!-- Custom prompt dialog (replaces native prompt()) -->
+<div id="prompt-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 id="prompt-modal-title" class="font-display font-semibold text-lg mb-2">Masukkan nilai</h3>
+    <p id="prompt-modal-message" class="text-sm text-muted mb-3"></p>
+    <input id="prompt-modal-input" class="field mb-5" />
+    <div class="flex gap-2">
+      <button type="button" id="prompt-modal-cancel" class="btn-ghost flex-1">Batal</button>
+      <button type="button" id="prompt-modal-ok" class="btn-primary flex-1">Oke</button>
+    </div>
+  </div>
+</div>
+
 <!-- Employee modal -->
 <div id="employee-modal" class="modal-overlay hidden">
   <div class="modal-card">
