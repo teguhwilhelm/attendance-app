@@ -6,6 +6,67 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// ---------- custom dialogs (replace native confirm/alert/prompt) ----------
+
+function showConfirm(message, { title = "Konfirmasi", confirmLabel = "Ya" } = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("confirm-modal");
+    document.getElementById("confirm-modal-title").textContent = title;
+    document.getElementById("confirm-modal-message").textContent = message;
+    const confirmBtn = document.getElementById("confirm-modal-confirm");
+    const cancelBtn = document.getElementById("confirm-modal-cancel");
+    confirmBtn.textContent = confirmLabel;
+    modal.classList.remove("hidden");
+    function cleanup(result) {
+      modal.classList.add("hidden");
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(result);
+    }
+    confirmBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
+function showAlert(message, title = "Info") {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("alert-modal");
+    document.getElementById("alert-modal-title").textContent = title;
+    document.getElementById("alert-modal-message").textContent = message;
+    const okBtn = document.getElementById("alert-modal-ok");
+    modal.classList.remove("hidden");
+    function cleanup() {
+      modal.classList.add("hidden");
+      okBtn.onclick = null;
+      resolve();
+    }
+    okBtn.onclick = cleanup;
+  });
+}
+
+function showPrompt(message, { title = "Masukkan nilai", placeholder = "" } = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("prompt-modal");
+    document.getElementById("prompt-modal-title").textContent = title;
+    document.getElementById("prompt-modal-message").textContent = message;
+    const input = document.getElementById("prompt-modal-input");
+    input.value = "";
+    input.placeholder = placeholder;
+    const okBtn = document.getElementById("prompt-modal-ok");
+    const cancelBtn = document.getElementById("prompt-modal-cancel");
+    modal.classList.remove("hidden");
+    setTimeout(() => input.focus(), 50);
+    function cleanup(result) {
+      modal.classList.add("hidden");
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(result);
+    }
+    okBtn.onclick = () => cleanup(input.value || null);
+    cancelBtn.onclick = () => cleanup(null);
+  });
+}
+
 // ---------- dark mode ----------
 
 function applyTheme(theme) {
@@ -117,7 +178,7 @@ document.getElementById("logout-btn").onclick = async () => {
 // ---------- forgot / reset password ----------
 
 document.getElementById("show-forgot").onclick = () => {
-  alert("Please Contact Your Company Admin");
+  showAlert("Please Contact Your Company Admin");
 };
 document.getElementById("back-to-login").onclick = () => {
   document.getElementById("forgot-form").classList.add("hidden");
@@ -372,7 +433,7 @@ async function loadShiftsSettings() {
 }
 
 window.deleteShift = async (id) => {
-  if (!confirm("Eliminate This Shift? Employees Who Use It Will Revert to Default Work Hours")) return;
+  if (!(await showConfirm("Eliminate This Shift? Employees Who Use It Will Revert to Default Work Hours", { confirmLabel: "Delete" }))) return;
   await api(`/api/shifts/${id}`, { method: "DELETE" });
   toast("Shift Deleted");
   loadShiftsSettings();
@@ -439,7 +500,7 @@ async function loadEmployees() {
 }
 
 window.resetEmployeePassword = async (id) => {
-  const password = prompt("Masukkan password baru untuk karyawan ini (minimal 6 karakter):");
+  const password = await showPrompt("Masukkan password baru untuk karyawan ini (minimal 6 karakter).", { title: "Reset password", placeholder: "Password baru" });
   if (!password) return;
   if (password.length < 6) { toast("Password minimal 6 karakter"); return; }
   try {
@@ -450,7 +511,7 @@ window.resetEmployeePassword = async (id) => {
 
 window.setEmployeeRole = async (id, role) => {
   const label = role === "admin" ? "menjadikan orang ini admin" : "mengembalikan orang ini jadi karyawan biasa";
-  if (!confirm(`Yakin ${label}?`)) return;
+  if (!(await showConfirm(`Yakin ${label}?`))) return;
   try {
     await api(`/api/employees/${id}/set-role`, { method: "POST", body: JSON.stringify({ role }) });
     toast("Role berhasil diubah");
@@ -459,7 +520,7 @@ window.setEmployeeRole = async (id, role) => {
 };
 
 window.linkMe = async (id) => {
-  if (!confirm("Hubungkan akun admin kamu ke data karyawan ini? Kamu akan bisa check-in/check-out pakai akun ini.")) return;
+  if (!(await showConfirm("Hubungkan akun admin kamu ke data karyawan ini? Kamu akan bisa check-in/check-out pakai akun ini."))) return;
   try {
     await api(`/api/employees/${id}/link-me`, { method: "POST" });
     state.me = await api("/api/auth/me");
@@ -496,7 +557,7 @@ function closeEmployeeModal() { document.getElementById("employee-modal").classL
 
 window.editEmployee = (id) => openEmployeeModal(state.employees.find((e) => e.id === id));
 window.deleteEmployee = async (id) => {
-  if (!confirm("Delete this employee and all of their attendance history? This cannot be undone.")) return;
+  if (!(await showConfirm("Delete this employee and all of their attendance history? This cannot be undone.", { confirmLabel: "Delete" }))) return;
   try {
     await api(`/api/employees/${id}`, { method: "DELETE" });
     toast("Employee deleted");
@@ -552,7 +613,7 @@ async function loadAttendance() {
 }
 
 window.deleteAttendance = async (id) => {
-  if (!confirm("Hapus catatan absensi ini? Tindakan ini tidak bisa dibatalkan.")) return;
+  if (!(await showConfirm("Hapus catatan absensi ini? Tindakan ini tidak bisa dibatalkan.", { confirmLabel: "Hapus" }))) return;
   try {
     await api(`/api/attendance/${id}`, { method: "DELETE" });
     toast("Catatan dihapus");
@@ -639,7 +700,7 @@ async function loadNotifications() {
 }
 window.markRead = async (id) => { await api(`/api/notifications/${id}/read`, { method: "POST" }); loadNotifications(); };
 window.deleteNotification = async (id) => {
-  if (!confirm("Delete This Notification?")) return;
+  if (!(await showConfirm("Delete This Notification?", { confirmLabel: "Delete" }))) return;
   await api(`/api/notifications/${id}`, { method: "DELETE" });
   loadNotifications();
 };
@@ -677,7 +738,7 @@ async function loadHolidays() {
 }
 
 window.deleteHoliday = async (id) => {
-  if (!confirm("Hapus hari libur ini?")) return;
+  if (!(await showConfirm("Hapus hari libur ini?", { confirmLabel: "Hapus" }))) return;
   await api(`/api/holidays/${id}`, { method: "DELETE" });
   toast("Hari libur dihapus");
   loadHolidays();
@@ -700,7 +761,7 @@ document.getElementById("add-holiday-btn").onclick = async () => {
 
 document.getElementById("import-holidays-btn").onclick = async () => {
   const year = new Date().getFullYear();
-  if (!confirm(`Impor hari libur nasional Indonesia tahun ${year}? Data yang sudah ada tidak akan diduplikat.`)) return;
+  if (!(await showConfirm(`Impor hari libur nasional Indonesia tahun ${year}? Data yang sudah ada tidak akan diduplikat.`, { confirmLabel: "Impor" }))) return;
   try {
     const res = await api("/api/holidays/import", { method: "POST", body: JSON.stringify({ year }) });
     toast(`Berhasil impor ${res.imported} hari libur baru (dari ${res.total} total tahun ${year}).`);
@@ -722,7 +783,7 @@ async function loadLocations() {
 }
 
 window.deleteLocation = async (id) => {
-  if (!confirm("Hapus cabang ini?")) return;
+  if (!(await showConfirm("Hapus cabang ini?", { confirmLabel: "Hapus" }))) return;
   await api(`/api/locations/${id}`, { method: "DELETE" });
   toast("Cabang dihapus");
   loadLocations();
@@ -792,7 +853,7 @@ async function loadLeave() {
 }
 
 window.deleteLeaveRequest = async (id) => {
-  if (!confirm("Hapus pengajuan cuti ini dari riwayat? Tindakan ini tidak bisa dibatalkan.")) return;
+  if (!(await showConfirm("Hapus pengajuan cuti ini dari riwayat? Tindakan ini tidak bisa dibatalkan.", { confirmLabel: "Hapus" }))) return;
   try {
     await api(`/api/leave-requests/${id}`, { method: "DELETE" });
     toast("Pengajuan cuti dihapus");
@@ -819,7 +880,7 @@ document.getElementById("submit-leave-btn").onclick = async () => {
 
 window.reviewLeave = async (id, action) => {
   const label = action === "approve" ? "menyetujui" : "menolak";
-  if (!confirm(`Yakin ${label} pengajuan cuti ini?`)) return;
+  if (!(await showConfirm(`Yakin ${label} pengajuan cuti ini?`))) return;
   try {
     await api(`/api/leave-requests/${id}/${action}`, { method: "POST" });
     toast("Berhasil diproses");
