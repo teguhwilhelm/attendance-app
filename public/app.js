@@ -86,6 +86,8 @@ document.getElementById("theme-toggle").onclick = () => {
   applyTheme(next);
 };
 
+document.getElementById("notif-bell-btn").onclick = () => showView("notifications");
+
 // ---------- helpers ----------
 
 async function api(path, opts = {}) {
