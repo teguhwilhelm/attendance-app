@@ -111,7 +111,6 @@
       <button data-view="attendance" class="nav-item">Attendance</button>
       <button data-view="employees" class="nav-item admin-only">Employees</button>
       <button data-view="reports" class="nav-item">Reports</button>
-      <button data-view="notifications" class="nav-item">Notifications <span id="notif-dot" class="hidden ml-1 inline-block w-1.5 h-1.5 rounded-full bg-warning"></span></button>
       <button data-view="leave" class="nav-item">Leave</button>
       <button data-view="shifts" class="nav-item admin-only">Shifts</button>
       <button data-view="settings" class="nav-item admin-only">Settings</button>
@@ -131,6 +130,9 @@
       </div>
       <div class="flex items-center gap-3 ml-3">
         <div id="company-badge" class="text-sm text-muted truncate"></div>
+        <button id="notif-bell-btn" class="theme-toggle-btn relative" title="Notifications">
+          🔔<span id="notif-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-warning"></span>
+        </button>
         <button id="theme-toggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
       </div>
     </header>
