@@ -258,6 +258,37 @@ app.put("/api/shifts/:id", async (c) => {
   return c.json(row);
 });
 
+app.put("/api/company/rotation", async (c) => {
+  const user = requireAdmin(c);
+  if (!user) return c.json({ error: "Admin access required" }, 403);
+  const b = await c.req.json();
+  await c.env.DB.prepare(
+    "UPDATE companies SET rotation_enabled = ?, rotation_start_date = ?, rotation_days = ?, rotation_shift_sequence = ? WHERE id = ?"
+  )
+    .bind(b.enabled ? 1 : 0, b.start_date || null, b.rotation_days || 7, JSON.stringify(b.sequence || []), user.company_id)
+    .run();
+  return c.json({ ok: true });
+});
+
+async function getRotationShift(db, company, dateStr) {
+  if (!company.rotation_enabled || !company.rotation_start_date || !company.rotation_shift_sequence) return null;
+  let sequence;
+  try {
+    sequence = JSON.parse(company.rotation_shift_sequence);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(sequence) || sequence.length === 0) return null;
+  const cycleDays = company.rotation_days || 7;
+  const start = new Date(company.rotation_start_date + "T00:00:00");
+  const today = new Date(dateStr + "T00:00:00");
+  const daysSince = Math.floor((today - start) / 86400000);
+  const cycleIndex = Math.floor(daysSince / cycleDays);
+  const idx = ((cycleIndex % sequence.length) + sequence.length) % sequence.length;
+  const shiftId = sequence[idx];
+  return await db.prepare("SELECT * FROM shifts WHERE id = ? AND company_id = ?").bind(shiftId, company.id).first();
+}
+
 app.delete("/api/shifts/:id", async (c) => {
   const user = requireAdmin(c);
   if (!user) return c.json({ error: "Admin access required" }, 403);
@@ -604,15 +635,17 @@ app.post("/api/attendance/checkin", async (c) => {
   const b = await c.req.json().catch(() => ({}));
   const db = c.env.DB;
   const company = await db.prepare("SELECT * FROM companies WHERE id = ?").bind(user.company_id).first();
-  const employee = await db.prepare("SELECT shift_id FROM employees WHERE id = ?").bind(user.employee_id).first();
-  let shift = null;
-  if (employee?.shift_id) {
-    shift = await db.prepare("SELECT * FROM shifts WHERE id = ? AND company_id = ?").bind(employee.shift_id, user.company_id).first();
-  }
-  const ip = c.req.header("CF-Connecting-IP") || "unknown";
   const now = new Date();
   const date = todayStr(now);
 
+  let shift = await getRotationShift(db, company, date);
+  if (!shift) {
+    const employee = await db.prepare("SELECT shift_id FROM employees WHERE id = ?").bind(user.employee_id).first();
+    if (employee?.shift_id) {
+      shift = await db.prepare("SELECT * FROM shifts WHERE id = ? AND company_id = ?").bind(employee.shift_id, user.company_id).first();
+    }
+  }
+  const ip = c.req.header("CF-Connecting-IP") || "unknown";
   const existing = await db
     .prepare("SELECT * FROM attendance WHERE employee_id = ? AND work_date = ?")
     .bind(user.employee_id, date)
