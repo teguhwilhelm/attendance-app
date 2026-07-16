@@ -291,6 +291,23 @@
             <button id="add-shift-btn" class="btn-secondary w-full">Add Shift</button>
           </div>
         </div>
+        <div class="card p-5 space-y-4">
+          <div class="card-header !p-0 !border-0 mb-1">Shifting Rotation</div>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" id="rotation-enabled" /> Enable Rotation
+          </label>
+          <div>
+            <label class="field-label">Start Date (One Week)</label>
+            <input id="rotation-start" type="date" class="field" />
+          </div>
+          <div>
+            <label class="field-label">Rotation Order</label>
+            <div id="rotation-sequence" class="flex flex-wrap gap-2 mb-2"></div>
+            <div id="rotation-shift-options" class="flex flex-wrap gap-2"></div>
+          </div>
+          <button id="rotation-clear-btn" class="btn-ghost text-xs">Clear Sequence</button>
+          <button id="save-rotation-btn" class="btn-primary w-full">Save Rotation</button>
+        </div>
       </section>
 
       <!-- SETTINGS -->
