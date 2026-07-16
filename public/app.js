@@ -376,17 +376,26 @@ document.getElementById("btn-checkin").onclick = async () => {
   const loc = await getLocation();
   try {
     const r = await api("/api/attendance/checkin", { method: "POST", body: JSON.stringify(loc) });
-    toast(`Checked in — ${r.status}${r.verified ? "" : " (location not verified)"}`);
+    const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    const statusLabel = r.status === "late" ? "Late" : "On Time";
+    showAlert(
+      `Successfully Checked In At ${time}.\nStatus: ${statusLabel}${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
+      "Check In Successful"
+    );
     loadDashboard();
-  } catch (err) { toast(err.message); }
+  } catch (err) { showAlert(err.message, "Failed Check In"); }
 };
 document.getElementById("btn-checkout").onclick = async () => {
   const loc = await getLocation();
   try {
     const r = await api("/api/attendance/checkout", { method: "POST", body: JSON.stringify(loc) });
-    toast(`Checked out${r.verified ? "" : " (location not verified)"}`);
+    const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    showAlert(
+      `Successfully Checked Out At ${time}.${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
+      "Check Out Successful"
+    );
     loadDashboard();
-  } catch (err) { toast(err.message); }
+  } catch (err) { showAlert(err.message, "Failed Check Out"); }
 };
 
 async function loadDashboard() {
@@ -677,7 +686,7 @@ async function loadAttendance() {
 }
 
 window.deleteAttendance = async (id) => {
-  if (!(await showConfirm("Hapus catatan absensi ini? Tindakan ini tidak bisa dibatalkan.", { confirmLabel: "Hapus" }))) return;
+  if (!(await showConfirm("Delete this attendance record? This action cannot be undone", { confirmLabel: "Delete" }))) return;
   try {
     await api(`/api/attendance/${id}`, { method: "DELETE" });
     toast("Catatan dihapus");
