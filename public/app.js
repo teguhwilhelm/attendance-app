@@ -8,7 +8,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- custom dialogs (replace native confirm/alert/prompt) ----------
 
-function showConfirm(message, { title = "Konfirmasi", confirmLabel = "Ya" } = {}) {
+function showConfirm(message, { title = "Confirmation", confirmLabel = "Yes" } = {}) {
   return new Promise((resolve) => {
     const modal = document.getElementById("confirm-modal");
     document.getElementById("confirm-modal-title").textContent = title;
@@ -28,7 +28,7 @@ function showConfirm(message, { title = "Konfirmasi", confirmLabel = "Ya" } = {}
   });
 }
 
-function showAlert(message, title = "Info") {
+function showAlert(message, title = "Information") {
   return new Promise((resolve) => {
     const modal = document.getElementById("alert-modal");
     document.getElementById("alert-modal-title").textContent = title;
@@ -44,7 +44,7 @@ function showAlert(message, title = "Info") {
   });
 }
 
-function showPrompt(message, { title = "Masukkan nilai", placeholder = "" } = {}) {
+function showPrompt(message, { title = "Enter Value", placeholder = "" } = {}) {
   return new Promise((resolve) => {
     const modal = document.getElementById("prompt-modal");
     document.getElementById("prompt-modal-title").textContent = title;
@@ -431,8 +431,70 @@ async function loadShiftsSettings() {
         <span class="text-muted text-xs ml-2">toleransi ${s.late_grace_minutes}m</span>
       </div>
       <button class="text-danger underline text-xs" onclick="deleteShift(${s.id})">Delete</button>
-    </div>`).join("") || `<p class="text-sm text-muted">Belum ada shift dibuat.</p>`;
+    </div>`).join("") || `<p class="text-sm text-muted">No Shifts Created Yet</p>`;
+  await loadRotationUI();
 }
+
+state.rotationSequence = [];
+
+async function loadRotationUI() {
+  const c = await api("/api/company");
+  document.getElementById("rotation-enabled").checked = !!c.rotation_enabled;
+  document.getElementById("rotation-start").value = c.rotation_start_date ? c.rotation_start_date.slice(0, 10) : "";
+  try {
+    state.rotationSequence = JSON.parse(c.rotation_shift_sequence || "[]");
+  } catch {
+    state.rotationSequence = [];
+  }
+  const validIds = new Set(state.shifts.map((s) => s.id));
+  state.rotationSequence = state.rotationSequence.filter((id) => validIds.has(id));
+  renderRotationUI();
+}
+
+function shiftNameById(id) {
+  const s = state.shifts.find((x) => x.id === id);
+  return s ? s.name : "?";
+}
+
+function renderRotationUI() {
+  document.getElementById("rotation-sequence").innerHTML = state.rotationSequence.map((id, i) => `
+    <span class="badge badge-present">${i + 1}. ${shiftNameById(id)} <button onclick="removeFromRotation(${i})" class="ml-1">✕</button></span>
+  `).join("") || `<span class="text-sm text-muted">No order yet — tap shift below to add.</span>`;
+
+  document.getElementById("rotation-shift-options").innerHTML = state.shifts.map((s) => `
+    <button type="button" class="btn-ghost text-xs" onclick="addToRotation(${s.id})">+ ${s.name}</button>
+  `).join("") || `<span class="text-sm text-muted">Make a shift first above before setting the rotation</span>`;
+}
+
+window.addToRotation = (id) => {
+  state.rotationSequence.push(id);
+  renderRotationUI();
+};
+window.removeFromRotation = (index) => {
+  state.rotationSequence.splice(index, 1);
+  renderRotationUI();
+};
+
+document.getElementById("rotation-clear-btn").onclick = () => {
+  state.rotationSequence = [];
+  renderRotationUI();
+};
+
+document.getElementById("save-rotation-btn").onclick = async () => {
+  const enabled = document.getElementById("rotation-enabled").checked;
+  const start_date = document.getElementById("rotation-start").value;
+  if (enabled && (!start_date || state.rotationSequence.length === 0)) {
+    toast("Fill in the start date and arrange the shift order first before activating the rotation");
+    return;
+  }
+  try {
+    await api("/api/company/rotation", {
+      method: "PUT",
+      body: JSON.stringify({ enabled, start_date, sequence: state.rotationSequence, rotation_days: 7 }),
+    });
+    toast("Shift Rotation Saved");
+  } catch (err) { toast(err.message); }
+};
 
 window.deleteShift = async (id) => {
   if (!(await showConfirm("Eliminate This Shift? Employees Who Use It Will Revert to Default Work Hours", { confirmLabel: "Delete" }))) return;
