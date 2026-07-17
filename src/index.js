@@ -697,17 +697,16 @@ app.post("/api/attendance/checkout", async (c) => {
   if (!user.employee_id) return c.json({ error: "This account is not linked to an employee record" }, 400);
   const b = await c.req.json().catch(() => ({}));
   const db = c.env.DB;
-  const company = await db.prepare("SELECT * FROM companies WHERE id = ?").bind(user.company_id).first();
   const ip = c.req.header("CF-Connecting-IP") || "unknown";
   const now = new Date();
-  const date = todayStr(now);
 
   const existing = await db
-    .prepare("SELECT * FROM attendance WHERE employee_id = ? AND work_date = ?")
-    .bind(user.employee_id, date)
+    .prepare(
+      "SELECT * FROM attendance WHERE employee_id = ? AND check_in_time IS NOT NULL AND check_out_time IS NULL ORDER BY work_date DESC LIMIT 1"
+    )
+    .bind(user.employee_id)
     .first();
-  if (!existing || !existing.check_in_time) return c.json({ error: "You haven't checked in today" }, 400);
-  if (existing.check_out_time) return c.json({ error: "Already checked out today" }, 409);
+  if (!existing) return c.json({ error: "You haven't checked in yet" }, 400);
 
   const { verified } = await checkGeofence(db, user.company_id, b.lat, b.lng);
 
