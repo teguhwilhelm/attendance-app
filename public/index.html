@@ -146,8 +146,7 @@
             <div class="font-mono text-4xl font-semibold" id="ledger-clock">--:--:--</div>
           </div>
           <div class="flex gap-3">
-            <button id="btn-checkin" class="punch-btn punch-in">Check In</button>
-            <button id="btn-checkout" class="punch-btn punch-out">Check Out</button>
+            <button id="btn-clock" class="punch-btn punch-in">Check In</button>
           </div>
         </div>
         <div id="dashboard-status" class="text-sm text-muted"></div>
@@ -384,11 +383,11 @@
   <!-- Custom confirm dialog (replaces native confirm()) -->
 <div id="confirm-modal" class="modal-overlay hidden">
   <div class="modal-card">
-    <h3 id="confirm-modal-title" class="font-display font-semibold text-lg mb-2">Konfirmasi</h3>
+    <h3 id="confirm-modal-title" class="font-display font-semibold text-lg mb-2">Confirmation</h3>
     <p id="confirm-modal-message" class="text-sm text-muted mb-5"></p>
     <div class="flex gap-2">
-      <button type="button" id="confirm-modal-cancel" class="btn-ghost flex-1">Batal</button>
-      <button type="button" id="confirm-modal-confirm" class="btn-primary flex-1">Ya</button>
+      <button type="button" id="confirm-modal-cancel" class="btn-ghost flex-1">Cancel</button>
+      <button type="button" id="confirm-modal-confirm" class="btn-primary flex-1">Yes</button>
     </div>
   </div>
 </div>
@@ -396,7 +395,7 @@
 <!-- Custom alert dialog (replaces native alert()) -->
 <div id="alert-modal" class="modal-overlay hidden">
   <div class="modal-card">
-    <h3 id="alert-modal-title" class="font-display font-semibold text-lg mb-2">Info</h3>
+    <h3 id="alert-modal-title" class="font-display font-semibold text-lg mb-2">Information</h3>
     <p id="alert-modal-message" class="text-sm text-muted mb-5 whitespace-pre-line"></p>
     <button type="button" id="alert-modal-ok" class="btn-primary w-full">Oke</button>
   </div>
