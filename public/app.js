@@ -286,12 +286,10 @@ async function boot() {
     document.body.classList.toggle("is-admin", me.user.role === "admin");
     document.getElementById("company-badge").textContent = me.company.name;
     document.getElementById("who-am-i").textContent = `${me.user.email} · ${me.user.role}`;
-    if (me.user.role !== "admin") {
-      document.getElementById("btn-checkin").classList.remove("hidden");
-      document.getElementById("btn-checkout").classList.remove("hidden");
-    } else if (!me.employee) {
-      document.getElementById("btn-checkin").disabled = true;
-      document.getElementById("btn-checkout").disabled = true;
+    if (me.user.role === "admin" && !me.employee) {
+      document.getElementById("btn-clock").disabled = true;
+    } else {
+      await refreshClockButton();
     }
     startClock();
     await loadEmployeesQuiet();
