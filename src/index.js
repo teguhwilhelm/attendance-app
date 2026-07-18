@@ -628,6 +628,18 @@ app.post("/api/employees/:id/reset-password", async (c) => {
 
 // ---------- attendance ----------
 
+app.get("/api/attendance/status", async (c) => {
+  const user = requireAuth(c);
+  if (!user) return c.json({ error: "Not signed in" }, 401);
+  if (!user.employee_id) return c.json({ open: false });
+  const existing = await c.env.DB.prepare(
+    "SELECT check_in_time FROM attendance WHERE employee_id = ? AND check_in_time IS NOT NULL AND check_out_time IS NULL ORDER BY work_date DESC LIMIT 1"
+  )
+    .bind(user.employee_id)
+    .first();
+  return c.json({ open: !!existing, check_in_time: existing?.check_in_time || null });
+});
+
 app.post("/api/attendance/checkin", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
