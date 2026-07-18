@@ -376,12 +376,12 @@ async function refreshClockButton() {
   try {
     const status = await api("/api/attendance/status");
     if (status.open) {
-      btn.textContent = "Check out";
+      btn.textContent = "Check Out";
       btn.classList.remove("punch-in");
       btn.classList.add("punch-out");
       btn.dataset.mode = "out";
     } else {
-      btn.textContent = "Check in";
+      btn.textContent = "Check In";
       btn.classList.remove("punch-out");
       btn.classList.add("punch-in");
       btn.dataset.mode = "in";
@@ -603,19 +603,19 @@ window.setEmployeeRole = async (id, role) => {
   if (!(await showConfirm(`Yakin ${label}?`))) return;
   try {
     await api(`/api/employees/${id}/set-role`, { method: "POST", body: JSON.stringify({ role }) });
-    toast("Role berhasil diubah");
+    toast("Role changed successfully");
     loadEmployees();
   } catch (err) { toast(err.message); }
 };
 
 window.linkMe = async (id) => {
-  if (!(await showConfirm("Hubungkan akun admin kamu ke data karyawan ini? Kamu akan bisa check-in/check-out pakai akun ini."))) return;
+  if (!(await showConfirm("Link your admin account to this employee's data. You'll be able to check in/out using this account"))) return;
   try {
     await api(`/api/employees/${id}/link-me`, { method: "POST" });
     state.me = await api("/api/auth/me");
-    document.getElementById("btn-checkin").disabled = false;
-    document.getElementById("btn-checkout").disabled = false;
-    toast("Akun kamu sekarang terhubung ke data karyawan ini");
+    document.getElementById("btn-clock").disabled = false;
+    await refreshClockButton();
+    toast("Your account is now linked to this employee's data.");
     loadEmployees();
   } catch (err) { toast(err.message); }
 };
