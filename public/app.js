@@ -370,30 +370,48 @@ function startClock() {
 
 // ---------- dashboard ----------
 
-document.getElementById("btn-checkin").onclick = async () => {
-  const loc = await getLocation();
+async function refreshClockButton() {
+  const btn = document.getElementById("btn-clock");
+  if (btn.disabled) return;
   try {
-    const r = await api("/api/attendance/checkin", { method: "POST", body: JSON.stringify(loc) });
-    const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    const statusLabel = r.status === "late" ? "Late" : "On Time";
-    showAlert(
-      `Successfully Checked In At ${time}.\nStatus: ${statusLabel}${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
-      "Check In Successful"
-    );
-    loadDashboard();
-  } catch (err) { showAlert(err.message, "Failed Check In"); }
-};
-document.getElementById("btn-checkout").onclick = async () => {
+    const status = await api("/api/attendance/status");
+    if (status.open) {
+      btn.textContent = "Check out";
+      btn.classList.remove("punch-in");
+      btn.classList.add("punch-out");
+      btn.dataset.mode = "out";
+    } else {
+      btn.textContent = "Check in";
+      btn.classList.remove("punch-out");
+      btn.classList.add("punch-in");
+      btn.dataset.mode = "in";
+    }
+  } catch {}
+}
+
+document.getElementById("btn-clock").onclick = async () => {
+  const btn = document.getElementById("btn-clock");
+  const mode = btn.dataset.mode || "in";
   const loc = await getLocation();
+  const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   try {
-    const r = await api("/api/attendance/checkout", { method: "POST", body: JSON.stringify(loc) });
-    const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    showAlert(
-      `Successfully Checked Out At ${time}.${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
-      "Check Out Successful"
-    );
+    if (mode === "in") {
+      const r = await api("/api/attendance/checkin", { method: "POST", body: JSON.stringify(loc) });
+      const statusLabel = r.status === "late" ? "Late" : "On Time";
+      showAlert(
+        `Successfully Checked In At ${time}.\nStatus: ${statusLabel}${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
+        "Check In Successful"
+      );
+    } else {
+      const r = await api("/api/attendance/checkout", { method: "POST", body: JSON.stringify(loc) });
+      showAlert(
+        `Successfully Checked Out At ${time}.${r.verified ? "\nVerified Location ✅" : "\nLocation Not Verified ⚠️"}`,
+        "Check Out Successful"
+      );
+    }
+    await refreshClockButton();
     loadDashboard();
-  } catch (err) { showAlert(err.message, "Failed Check Out"); }
+  } catch (err) { showAlert(err.message, mode === "in" ? "Failed Check In " : "Failed Check Out"); }
 };
 
 async function loadDashboard() {
