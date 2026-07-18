@@ -411,7 +411,7 @@ document.getElementById("btn-clock").onclick = async () => {
     }
     await refreshClockButton();
     loadDashboard();
-  } catch (err) { showAlert(err.message, mode === "in" ? "Failed Check In " : "Failed Check Out"); }
+  } catch (err) { showAlert(err.message, mode === "in" ? "Failed Check In! " : "Failed Check Out!"); }
 };
 
 async function loadDashboard() {
