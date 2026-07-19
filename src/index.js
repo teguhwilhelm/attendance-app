@@ -36,7 +36,7 @@ function requireAdmin(c) {
 }
 
 function todayStr(d = new Date()) {
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 }
 
 async function checkGeofence(db, companyId, lat, lng) {
