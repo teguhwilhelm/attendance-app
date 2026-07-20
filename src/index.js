@@ -572,6 +572,16 @@ app.delete("/api/employees/:id", async (c) => {
   await c.env.DB.prepare("DELETE FROM leave_requests WHERE employee_id = ? AND company_id = ?")
     .bind(id, user.company_id)
     .run();
+  await c.env.DB.prepare(
+    "DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE employee_id = ? AND company_id = ?)"
+  )
+    .bind(id, user.company_id)
+    .run();
+  await c.env.DB.prepare(
+    "DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE employee_id = ? AND company_id = ?)"
+  )
+    .bind(id, user.company_id)
+    .run();
   await c.env.DB.prepare("DELETE FROM users WHERE employee_id = ? AND company_id = ?")
     .bind(id, user.company_id)
     .run();
