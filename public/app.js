@@ -122,7 +122,7 @@ function getLocation() {
 
 function fmtTime(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function badge(status) {
@@ -393,7 +393,7 @@ document.getElementById("btn-clock").onclick = async () => {
   const btn = document.getElementById("btn-clock");
   const mode = btn.dataset.mode || "in";
   const loc = await getLocation();
-  const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
   try {
     if (mode === "in") {
       const r = await api("/api/attendance/checkin", { method: "POST", body: JSON.stringify(loc) });
@@ -779,7 +779,7 @@ async function loadNotifications() {
         <span class="badge badge-${n.type === "late" ? "late" : n.type === "absent" ? "absent" : "half_day"}">${n.type}</span>
         ${isAdmin && n.full_name ? `<span class="text-sm font-medium ml-2">${n.full_name}</span>` : ""}
         <p class="text-sm mt-1">${n.message}</p>
-        <p class="text-xs text-muted mt-0.5">${new Date(n.created_at).toLocaleString()}</p>
+        <p class="text-xs text-muted mt-0.5">${new Date(n.created_at).toLocaleString("id-ID", { hour12: false })}</p>
       </div>
       <div class="flex flex-col items-end gap-1 shrink-0">
         ${n.is_read ? "" : `<button class="btn-ghost text-xs" onclick="markRead(${n.id})">Mark Read</button>`}
