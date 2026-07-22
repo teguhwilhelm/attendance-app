@@ -125,6 +125,20 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
+function calcHours(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return null;
+  const ms = new Date(checkOut) - new Date(checkIn);
+  if (ms <= 0) return null;
+  return ms / 3600000;
+}
+
+function fmtHours(hours) {
+  if (hours == null) return "—";
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${h}j ${m}m`;
+}
+
 function badge(status) {
   const label = { present: "Present", late: "Late", absent: "Absent", on_leave: "On leave", half_day: "Half day" }[status] || status;
   return `<span class="badge badge-${status}">${label}</span>`;
@@ -430,9 +444,10 @@ async function loadDashboard() {
       <td class="font-sans">${r.department || "—"}</td>
       <td>${fmtTime(r.check_in_time)}</td>
       <td>${fmtTime(r.check_out_time)}</td>
+      <td class="font-mono">${fmtHours(calcHours(r.check_in_time, r.check_out_time))}</td>
       <td>${badge(r.status)}</td>
       <td class="font-sans text-xs">${r.check_in_time ? (r.check_in_verified ? "✅ On Site" : "⚠️ Unverified") : "—"}</td>
-    </tr>`).join("") || `<tr><td colspan="6" class="text-muted font-sans">No Attendance Recorded Yet Today.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans">No Attendance Recorded Yet Today.</td></tr>`;
 }
 
 // ---------- shifts ----------
@@ -695,10 +710,11 @@ async function loadAttendance() {
       <td class="font-sans">${r.full_name}</td>
       <td>${fmtTime(r.check_in_time)}</td>
       <td>${fmtTime(r.check_out_time)}</td>
+      <td class="font-mono">${fmtHours(calcHours(r.check_in_time, r.check_out_time))}</td>
       <td>${badge(r.status)}</td>
       <td class="font-sans text-xs">${r.check_in_time ? (r.check_in_verified ? "✅" : "⚠️") : "—"}</td>
       <td class="font-sans text-xs">${isAdmin ? `<button class="text-danger underline" onclick="deleteAttendance(${r.id})">Delete</button>` : ""}</td>
-    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No records for this range.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="8" class="text-muted font-sans p-4">No Records For This Range.</td></tr>`;
 }
 
 window.deleteAttendance = async (id) => {
@@ -725,6 +741,7 @@ async function loadReports() {
   document.getElementById("rep-attendance-rate").textContent = data.totals.attendance_rate + "%";
   document.getElementById("rep-tardiness-rate").textContent = data.totals.tardiness_rate + "%";
   document.getElementById("rep-absence-rate").textContent = data.totals.absence_rate + "%";
+  document.getElementById("rep-total-hours").textContent = fmtHours(data.totals.total_hours);
   document.querySelector("#reports-table tbody").innerHTML = data.by_employee.map((r) => `
     <tr>
       <td class="font-sans font-medium">${r.full_name}</td>
@@ -734,7 +751,8 @@ async function loadReports() {
       <td class="text-warning">${r.late_days}</td>
       <td class="text-danger">${r.absent_days}</td>
       <td>${r.leave_days}</td>
-    </tr>`).join("") || `<tr><td colspan="7" class="text-muted font-sans p-4">No data for this range.</td></tr>`;
+      <td class="font-mono">${fmtHours(r.total_hours)}</td>
+    </tr>`).join("") || `<tr><td colspan="8" class="text-muted font-sans p-4">No Data For This Range.</td></tr>`;
 }
 
 document.getElementById("export-csv").onclick = () => {
