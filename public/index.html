@@ -161,8 +161,8 @@
           <div class="card-header">Today's Team</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="today-table"><thead><tr>
-              <th>Employee</th><th>Department</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Location</th>
-            </tr></thead><tbody></tbody></table>
+  <th>Employee</th><th>Department</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th><th>Location</th>
+</tr></thead><tbody></tbody></table>
           </div>
         </div>
       </section>
@@ -192,8 +192,8 @@
           <div class="card-header" id="att-range-label">Attendance</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="att-table"><thead><tr>
-              <th>Date</th><th>Employee</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Verified</th><th></th>
-            </tr></thead><tbody></tbody></table>
+  <th>Date</th><th>Employee</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th><th>Verified</th><th></th>
+</tr></thead><tbody></tbody></table>
           </div>
         </div>
       </section>
@@ -233,17 +233,18 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="stat-card"><div class="stat-label">Attendance Rate</div><div class="stat-value" id="rep-attendance-rate">–</div></div>
           <div class="stat-card"><div class="stat-label">Tardiness Rate</div><div class="stat-value text-warning" id="rep-tardiness-rate">–</div></div>
           <div class="stat-card"><div class="stat-label">Absence Rate</div><div class="stat-value text-danger" id="rep-absence-rate">–</div></div>
+          <div class="stat-card"><div class="stat-label">Total Working Hours</div><div class="stat-value" id="rep-total-hours">–</div></div>
         </div>
 
         <div class="card">
           <div class="card-header">By Employee</div>
           <div class="overflow-x-auto">
             <table class="data-table" id="reports-table"><thead><tr>
-              <th>Employee</th><th>Department</th><th>Days Tracked</th><th>Present</th><th>Late</th><th>Absent</th><th>Leave</th>
+              <th>Employee</th><th>Department</th><th>Days Tracked</th><th>Present</th><th>Late</th><th>Absent</th><th>Leave</th><th>Hours</th>
             </tr></thead><tbody></tbody></table>
           </div>
         </div>
