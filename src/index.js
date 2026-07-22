@@ -820,7 +820,9 @@ app.get("/api/reports/summary", async (c) => {
             SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present_days,
             SUM(CASE WHEN a.status = 'late' THEN 1 ELSE 0 END) as late_days,
             SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) as absent_days,
-            SUM(CASE WHEN a.status = 'on_leave' THEN 1 ELSE 0 END) as leave_days
+            SUM(CASE WHEN a.status = 'on_leave' THEN 1 ELSE 0 END) as leave_days,
+            SUM(CASE WHEN a.check_in_time IS NOT NULL AND a.check_out_time IS NOT NULL
+                THEN (julianday(a.check_out_time) - julianday(a.check_in_time)) * 24 ELSE 0 END) as total_hours
      FROM attendance a JOIN employees e ON e.id = a.employee_id
      WHERE a.company_id = ? AND a.work_date BETWEEN ? AND ? ${empFilter}
      GROUP BY e.id ORDER BY e.full_name`
@@ -835,9 +837,10 @@ app.get("/api/reports/summary", async (c) => {
       acc.late_days += r.late_days;
       acc.absent_days += r.absent_days;
       acc.leave_days += r.leave_days;
+      acc.total_hours += r.total_hours || 0;
       return acc;
     },
-    { total_days: 0, present_days: 0, late_days: 0, absent_days: 0, leave_days: 0 }
+    { total_days: 0, present_days: 0, late_days: 0, absent_days: 0, leave_days: 0, total_hours: 0 }
   );
 
   return c.json({
@@ -845,11 +848,12 @@ app.get("/api/reports/summary", async (c) => {
     end,
     totals: {
       ...totals,
+      total_hours: +totals.total_hours.toFixed(1),
       attendance_rate: totals.total_days ? +(((totals.present_days + totals.late_days) / totals.total_days) * 100).toFixed(1) : 0,
       tardiness_rate: totals.total_days ? +((totals.late_days / totals.total_days) * 100).toFixed(1) : 0,
       absence_rate: totals.total_days ? +((totals.absent_days / totals.total_days) * 100).toFixed(1) : 0,
     },
-    by_employee: byEmployee,
+    by_employee: byEmployee.map((r) => ({ ...r, total_hours: +r.total_hours.toFixed(1) })),
   });
 });
 
@@ -864,6 +868,13 @@ function fmtTimeWIB(iso) {
     second: "2-digit",
     hour12: false,
   });
+}
+
+function calcHoursWorked(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return null;
+  const ms = new Date(checkOut) - new Date(checkIn);
+  if (ms <= 0) return null;
+  return ms / 3600000;
 }
 
 async function fetchRangeRows(c) {
@@ -886,9 +897,10 @@ app.get("/api/export/csv", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
   const rows = await fetchRangeRows(c);
-  const header = ["Employee", "Position", "Date", "Check In", "Check Out", "Status", "In Verified", "Out Verified", "Notes"];
+  const header = ["Employee", "Position", "Date", "Check In", "Check Out", "Hours", "Status", "In Verified", "Out Verified", "Notes"];
   const lines = [header.join(",")];
   for (const r of rows) {
+    const hours = calcHoursWorked(r.check_in_time, r.check_out_time);
     lines.push(
       [
         r.full_name,
@@ -896,6 +908,7 @@ app.get("/api/export/csv", async (c) => {
         r.work_date,
         fmtTimeWIB(r.check_in_time),
         fmtTimeWIB(r.check_out_time),
+        hours != null ? hours.toFixed(2) : "",
         r.status,
         r.check_in_verified ? "yes" : "no",
         r.check_out_verified ? "yes" : "no",
@@ -917,17 +930,21 @@ app.get("/api/export/xlsx", async (c) => {
   const user = requireAuth(c);
   if (!user) return c.json({ error: "Not signed in" }, 401);
   const rows = await fetchRangeRows(c);
-  const data = rows.map((r) => ({
-    Employee: r.full_name,
-    Position: r.position || "",
-    Date: r.work_date,
-    "Check In": fmtTimeWIB(r.check_in_time),
-    "Check Out": fmtTimeWIB(r.check_out_time),
-    Status: r.status,
-    "In Verified": r.check_in_verified ? "yes" : "no",
-    "Out Verified": r.check_out_verified ? "yes" : "no",
-    Notes: r.notes || "",
-  }));
+  const data = rows.map((r) => {
+    const hours = calcHoursWorked(r.check_in_time, r.check_out_time);
+    return {
+      Employee: r.full_name,
+      Position: r.position || "",
+      Date: r.work_date,
+      "Check In": fmtTimeWIB(r.check_in_time),
+      "Check Out": fmtTimeWIB(r.check_out_time),
+      Hours: hours != null ? +hours.toFixed(2) : "",
+      Status: r.status,
+      "In Verified": r.check_in_verified ? "yes" : "no",
+      "Out Verified": r.check_out_verified ? "yes" : "no",
+      Notes: r.notes || "",
+    };
+  });
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Attendance");
